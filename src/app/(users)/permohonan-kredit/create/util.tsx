@@ -20,24 +20,26 @@ export default function CreatePermohonanKredit({
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/jenis-pemohon")
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.status === 200) {
-          setJenis(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
-        }
-      });
-    fetch("/api/user")
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.status === 200) {
-          setUserss(res.data.map((d: User) => ({ ...d, key: d.id })));
-        }
-      });
+    (async () => {
+      await fetch("/api/jenis-pemohon")
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 200) {
+            setJenis(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
+          }
+        });
+      await fetch("/api/user")
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 200) {
+            setUserss(res.data.map((d: User) => ({ ...d, key: d.id })));
+          }
+        });
+    })();
     setLoading(false);
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!data.JenisPemohon.name || !data.Document.User.fullname)
       return alert("Mohon lengkapi data terlebih dahulu");
     setLoading(true);
@@ -51,7 +53,7 @@ export default function CreatePermohonanKredit({
       temp.push({ date: moment().format("DD/MM/YYYY"), desc: tempDesc });
       data.Document.description = JSON.stringify(temp);
     }
-    fetch("/api/permohonan", {
+    await fetch("/api/permohonan", {
       method: record ? "PUT" : "POST",
       body: JSON.stringify(data),
     })

@@ -12,13 +12,15 @@ export default function UpdatePermohonanKredit({ id }: { id: number }) {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/permohonan/find?id=" + id)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.data) {
-          setData(res.data);
-        }
-      });
+    (async () => {
+      await fetch("/api/permohonan/find?id=" + id)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.data) {
+            setData(res.data);
+          }
+        });
+    })();
     setLoading(false);
   }, []);
 

@@ -42,10 +42,11 @@ export const UserBio = () => {
     fetch("/api/auth", { method: "DELETE" })
       .then((res) => res.json())
       .then((res) => {
-        if (res.status === 200) {
-          window && window.location.replace("/");
+        if (res.status !== 200) {
+          showNotif(res.msg);
+          return;
         }
-        showNotif(res.msg);
+        window && window.location.replace("/");
       })
       .catch((err) => {
         console.log(err);
@@ -172,10 +173,11 @@ export const MenuMobile = () => {
     fetch("/api/auth", { method: "DELETE" })
       .then((res) => res.json())
       .then((res) => {
-        if (res.status === 200) {
-          window && window.location.replace("/");
+        if (res.status !== 200) {
+          showNotif(res.msg);
+          return;
         }
-        showNotif(res.msg);
+        window && window.location.replace("/");
       })
       .catch((err) => {
         console.log(err);

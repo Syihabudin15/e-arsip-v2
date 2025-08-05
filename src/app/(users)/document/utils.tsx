@@ -2,7 +2,7 @@
 
 import { IFileList, IPermohonanKredit } from "@/components/IInterfaces";
 import { FilterOption } from "@/components/utils/FormUtils";
-import { FormOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { FormOutlined } from "@ant-design/icons";
 import { JenisPemohon } from "@prisma/client";
 import { Button, Input, Table, TableProps } from "antd";
 import moment from "moment";
@@ -19,9 +19,9 @@ export default function TableDokumen() {
   const [loading, setLoading] = useState(false);
   const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
 
-  const getData = () => {
+  const getData = async () => {
     setLoading(true);
-    fetch(
+    await fetch(
       `/api/permohonan?page=${page}&pageSize=${pageSize}${
         search ? "&search=" + search : ""
       }${jenisId ? "&jenisId=" + jenisId : ""}`
@@ -36,12 +36,15 @@ export default function TableDokumen() {
   };
 
   useEffect(() => {
-    fetch("/api/jenis-pemohon")
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.status === 200)
-          setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
-      });
+    (async () => {
+      await getData();
+      await fetch("/api/jenis-pemohon")
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 200)
+            setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
+        });
+    })();
   }, []);
 
   useEffect(() => {

@@ -20,9 +20,9 @@ export default function TableJenisPemohon() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const getData = () => {
+  const getData = async () => {
     setLoading(true);
-    fetch(
+    await fetch(
       `/api/jenis-pemohon?page=${page}&pageSize=${pageSize}${
         search ? "&search=" + search : ""
       }`
@@ -37,8 +37,11 @@ export default function TableJenisPemohon() {
   };
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      getData();
+    (async () => {
+      await getData();
+    })();
+    const timeout = setTimeout(async () => {
+      await getData();
     }, 200);
     return () => clearTimeout(timeout);
   }, [search, page, pageSize]);
@@ -110,29 +113,6 @@ export default function TableJenisPemohon() {
         );
       },
     },
-    // {
-    //   title: "STATUS",
-    //   dataIndex: "status",
-    //   key: "status",
-    //   className: "text-xs text-center",
-    //   width: 100,
-    //   onHeaderCell: () => {
-    //     return {
-    //       ["style"]: {
-    //         textAlign: "center",
-    //         fontSize: 12,
-    //       },
-    //     };
-    //   },
-    //   render(value, record, index) {
-    //     return (
-    //       <>
-    //         {record.status && <Tag color="#5fb739">{"ACTIVE"}</Tag>}
-    //         {!record.status && <Tag color="#f50">{"INACTIVE"}</Tag>}
-    //       </>
-    //     );
-    //   },
-    // },
     {
       title: "CREATED AT",
       dataIndex: "createdAt",
@@ -245,12 +225,12 @@ const UpsertJenisPemohon = ({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setLoading(true);
     if ("key" in tempData) {
       delete tempData.key;
     }
-    fetch("/api/jenis-pemohon", {
+    await fetch("/api/jenis-pemohon", {
       method: data ? "PUT" : "POST",
       body: JSON.stringify({ ...tempData, updatedAt: new Date() }),
     })
@@ -328,12 +308,12 @@ const DeleteJenisPemohon = ({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setLoading(true);
     if ("key" in data) {
       delete data.key;
     }
-    fetch("/api/jenis-pemohon", {
+    await fetch("/api/jenis-pemohon", {
       method: data ? "PUT" : "POST",
       body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
     })

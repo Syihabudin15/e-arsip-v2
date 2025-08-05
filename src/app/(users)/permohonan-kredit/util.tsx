@@ -27,9 +27,9 @@ export default function TablePermohonanKredit() {
   const [loading, setLoading] = useState(false);
   const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
 
-  const getData = () => {
+  const getData = async () => {
     setLoading(true);
-    fetch(
+    await fetch(
       `/api/permohonan?page=${page}&pageSize=${pageSize}${
         search ? "&search=" + search : ""
       }${jenisId ? "&jenisId=" + jenisId : ""}`
@@ -44,17 +44,20 @@ export default function TablePermohonanKredit() {
   };
 
   useEffect(() => {
-    fetch("/api/jenis-pemohon")
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.status === 200)
-          setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
-      });
+    (async () => {
+      await getData();
+      await fetch("/api/jenis-pemohon")
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 200)
+            setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
+        });
+    })();
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      getData();
+    const timeout = setTimeout(async () => {
+      await getData();
     }, 200);
     return () => clearTimeout(timeout);
   }, [search, page, pageSize, jenisId]);
@@ -276,12 +279,12 @@ const DeletePermohonan = ({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setLoading(true);
     if ("key" in data) {
       delete data.key;
     }
-    fetch("/api/permohonan", {
+    await fetch("/api/permohonan", {
       method: "PUT",
       body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
     })
