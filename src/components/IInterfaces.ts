@@ -21,10 +21,11 @@ export interface IFormInput {
   onChange?: Function;
   required?: boolean;
   placeholder?: any;
-  type?: "area" | "number" | "date";
+  type?: "area" | "number" | "date" | "password" | "option";
   width?: number | string;
   align?: "row" | "col";
   disable?: boolean;
+  options?: { label: any; value: any }[];
 }
 
 interface IDocument extends Document {
@@ -43,4 +44,10 @@ export interface IFileList {
 export interface IDescription {
   date: string;
   desc: string;
+}
+
+export interface IMenu {
+  path: string;
+  name: string;
+  access: string[];
 }

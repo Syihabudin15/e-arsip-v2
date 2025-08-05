@@ -1,13 +1,11 @@
 import prisma from "@/components/Prisma";
-import { User } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import bcript from "bcrypt";
 
 export const GET = async (req: NextRequest) => {
   const search: string | undefined = <any>(
     req.nextUrl.searchParams.get("search")
   );
-  const role: string | undefined = <any>req.nextUrl.searchParams.get("role");
   const page: number = parseInt(req.nextUrl.searchParams.get("page") || "1");
   const pageSize: number = parseInt(
     req.nextUrl.searchParams.get("pageSize") || "50"
@@ -15,42 +13,21 @@ export const GET = async (req: NextRequest) => {
   const skip = (page - 1) * pageSize;
 
   try {
-    const find = await prisma.user.findMany({
+    const find = await prisma.role.findMany({
       where: {
         status: true,
         ...(search && {
-          OR: [
-            { fullname: { contains: search } },
-            { username: { contains: search } },
-            { email: { contains: search } },
-          ],
-        }),
-        ...(role && {
-          role: {
-            roleName: role,
-          },
+          OR: [{ roleName: { contains: search } }],
         }),
       },
       skip,
       take: pageSize,
-      include: {
-        role: true,
-      },
     });
-    const total = await prisma.user.count({
+    const total = await prisma.role.count({
       where: {
         status: true,
         ...(search && {
-          OR: [
-            { fullname: { contains: search } },
-            { username: { contains: search } },
-            { email: { contains: search } },
-          ],
-        }),
-        ...(role && {
-          role: {
-            roleName: role,
-          },
+          OR: [{ roleName: { contains: search } }],
         }),
       },
     });
@@ -66,42 +43,46 @@ export const GET = async (req: NextRequest) => {
 };
 
 export const POST = async (req: NextRequest) => {
-  const { id, ...data }: User = await req.json();
+  const temp: Role = await req.json();
+  const { id, ...data } = temp;
   try {
-    const find = await prisma.user.findFirst({
-      where: { username: data.username },
+    const find = await prisma.role.findFirst({
+      where: { roleName: data.roleName },
     });
     if (find) {
       return NextResponse.json(
-        { status: 400, msg: "Username telah digunakan" },
+        { data: null, status: 400, msg: "Nama Role sudah tersedia!" },
         { status: 400 }
       );
     }
-    const pass = await bcript.hash(data.password, 10);
-    await prisma.user.create({ data: { ...data, password: pass } });
-    return NextResponse.json({ status: 201, msg: "OK" }, { status: 201 });
+    await prisma.role.create({
+      data,
+    });
+    return NextResponse.json({ data, status: 201, msg: "OK" }, { status: 201 });
   } catch (err) {
     console.log(err);
     return NextResponse.json({ status: 500 }, { status: 500 });
   }
 };
+
 export const PUT = async (req: NextRequest) => {
-  const { id, role, ...data } = await req.json();
+  const temp: Role = await req.json();
+  const { id, ...data } = temp;
   try {
-    const find = await prisma.user.findFirst({
+    const find = await prisma.role.findFirst({
       where: { id: id },
     });
     if (!find) {
       return NextResponse.json(
-        { status: 404, msg: "Uset not found" },
+        { data: null, status: 404, msg: "Data role tidak ditemukan!" },
         { status: 404 }
       );
     }
-    await prisma.user.update({
+    await prisma.role.update({
       where: { id: id },
       data: { ...data, updatedAt: new Date() },
     });
-    return NextResponse.json({ status: 200, msg: "OK" }, { status: 200 });
+    return NextResponse.json({ data, status: 200, msg: "OK" }, { status: 200 });
   } catch (err) {
     console.log(err);
     return NextResponse.json({ status: 500 }, { status: 500 });

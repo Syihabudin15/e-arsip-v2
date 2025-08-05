@@ -19,6 +19,7 @@ import {
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
+  RobotOutlined,
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -152,6 +153,11 @@ export const menuItems = [
     label: "Role Management",
     icon: <KeyOutlined />,
     key: "/roles",
+  },
+  {
+    label: "Logs",
+    icon: <RobotOutlined />,
+    key: "/logs",
   },
 ];
 

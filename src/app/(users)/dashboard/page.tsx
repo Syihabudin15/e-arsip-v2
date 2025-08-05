@@ -1,3 +1,9 @@
+import DashboardMaster from "./util";
+
 export default async function Page() {
-  return <div>Dashboard</div>;
+  return (
+    <div>
+      <DashboardMaster />
+    </div>
+  );
 }

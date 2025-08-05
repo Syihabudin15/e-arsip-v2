@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import TableRole from "./util";
+import { TableRole } from ".";
 
 export const metadata: Metadata = { title: "Manage Role" };
 

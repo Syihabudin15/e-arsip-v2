@@ -30,6 +30,23 @@ export const FormInput = (params: IFormInput) => {
             disabled={params.disable}
           ></Input.TextArea>
         )}
+        {params.type && params.type === "password" && (
+          <Input.Password
+            value={params.value}
+            onChange={(e) => params.onChange && params.onChange(e.target.value)}
+            disabled={params.disable}
+          />
+        )}
+        {params.type && params.type === "option" && (
+          <Select
+            value={params.value}
+            onChange={(e) => params.onChange && params.onChange(e)}
+            disabled={params.disable}
+            options={params.options}
+            placeholder="Choose"
+            style={{ width: "100%" }}
+          />
+        )}
         {!params.type && (
           <Input
             value={params.value}

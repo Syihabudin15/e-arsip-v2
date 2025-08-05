@@ -1,10 +1,14 @@
 "use client";
 
-import { PlusCircleOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  FormOutlined,
+  PlusCircleOutlined,
+} from "@ant-design/icons";
 import { Role } from "@prisma/client";
-import { Button, Input, Table, TableProps, Tag } from "antd";
+import { App, Button, Input, Modal, Table, TableProps, Tooltip } from "antd";
 import moment from "moment";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function TableRole() {
   const [page, setPage] = useState(1);
@@ -13,6 +17,32 @@ export default function TableRole() {
   const [data, setData] = useState<Role[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const getData = async () => {
+    setLoading(true);
+    await fetch(
+      `/api/role?page=${page}&pageSize=${pageSize}${
+        search ? "&search=" + search : ""
+      }`
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.data.map((d: Role) => ({ ...d, key: d.id })));
+        setTotal(res.total);
+      })
+      .catch((err) => console.log(err));
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    (async () => {
+      await getData();
+    })();
+    const timeout = setTimeout(async () => {
+      await getData();
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [search, page, pageSize]);
 
   const columns: TableProps<Role>["columns"] = [
     {
@@ -52,10 +82,10 @@ export default function TableRole() {
       },
     },
     {
-      title: "STATUS",
-      dataIndex: "status",
-      key: "status",
-      className: "text-xs text-center",
+      title: "PERMISSION",
+      dataIndex: "permission",
+      key: "permission",
+      className: "text-xs",
       width: 100,
       onHeaderCell: () => {
         return {
@@ -66,10 +96,11 @@ export default function TableRole() {
         };
       },
       render(value, record, index) {
+        const displayText =
+          value.length > 40 ? value.slice(0, 40) + "..." : value;
         return (
           <>
-            {record.status && <Tag color="#5fb739">{"ACTIVE"}</Tag>}
-            {!record.status && <Tag color="#f50">{"INACTIVE"}</Tag>}
+            <Tooltip title={value}>{displayText}</Tooltip>
           </>
         );
       },
@@ -125,7 +156,19 @@ export default function TableRole() {
         };
       },
       render(value, record, index) {
-        return <div className="flex gap-2 justify-center">u</div>;
+        return (
+          <div className="flex gap-2 justify-center" key={record.id}>
+            <DeleteRole data={record} getData={getData} />
+            <Button
+              size="small"
+              type="primary"
+              icon={<FormOutlined />}
+              onClick={() =>
+                window && window.location.replace("/roles/" + record.id)
+              }
+            ></Button>
+          </div>
+        );
       },
     },
   ];
@@ -178,3 +221,62 @@ export default function TableRole() {
     />
   );
 }
+
+const DeleteRole = ({ data, getData }: { data: Role; getData: Function }) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { modal } = App.useApp();
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    if ("key" in data) {
+      delete data.key;
+    }
+    await fetch("/api/jenis-pemohon", {
+      method: data ? "PUT" : "POST",
+      body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 201 || res.status === 200) {
+          modal.success({
+            title: "BERHASIL",
+            content: `Data berhasil dihapus`,
+          });
+          getData();
+          setOpen(false);
+          return;
+        }
+        modal.error({ title: "ERROR", content: res.msg });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        modal.error({ title: "ERROR", content: "Internal Server Error" });
+      });
+    setLoading(false);
+  };
+  return (
+    <div>
+      <Button
+        icon={<DeleteOutlined />}
+        type="primary"
+        danger
+        onClick={() => setOpen(true)}
+        size="small"
+      ></Button>
+      <Modal
+        title={`HAPUS ${data.roleName}`}
+        open={open}
+        onCancel={() => setOpen(false)}
+        onOk={() => handleSubmit()}
+        loading={loading}
+        okButtonProps={{ loading: loading }}
+      >
+        <div className="my-4">
+          <p>Apakah anda yakin ingin menghapus Role ini?</p>
+        </div>
+      </Modal>
+    </div>
+  );
+};

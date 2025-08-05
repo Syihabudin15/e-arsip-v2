@@ -39,12 +39,12 @@ export default function LoginPage() {
 
   return (
     <div className="flex justify-center sm:justify-end items-center w-full h-[92vh] bg-gradient-to-br from-blue-500 to-red-400">
-      <div className="bg-slate-50 p-5 h-[50vh] sm:h-full w-[90vw] sm:w-[30vw] flex flex-col items-center justify-center">
+      <div className="bg-slate-50 p-5 h-[50vh] sm:h-full w-[90vw] sm:w-[30vw] flex flex-col items-center justify-center rounded">
         <Image
-          src={process.env.NEXT_PUBLIC_APP_LOGO || "/globe.svg"}
+          src={"/rifi-login.jpeg"}
           alt="App Logo"
-          width={100}
-          height={100}
+          width={200}
+          height={200}
         />
         <div className="my-5 w-full">
           <Form
