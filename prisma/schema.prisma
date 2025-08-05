@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id         Int    @id @default(autoincrement())
+  roleName   String @unique
+  permission String @db.Text
+
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  User      User[]
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  fullname String
+  username String  @unique
+  password String
+  email    String
+  photo    String?
+
+  status    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+  role      Role       @relation(fields: [roleId], references: [id])
+  roleId    Int
+  Document  Document[]
+}
+
+model JenisPemohon {
+  id         Int    @id @default(autoincrement())
+  name       String @unique
+  keterangan String @db.Text
+
+  status           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now())
+  PermohonanKredit PermohonanKredit[]
+}
+
+model PermohonanKredit {
+  id       Int     @id @default(autoincrement())
+  fullname String
+  NIK      String?
+
+  status         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
+  JenisPemohon   JenisPemohon @relation(fields: [jenisPemohonId], references: [id])
+  jenisPemohonId Int
+  Document       Document     @relation(fields: [documentId], references: [id])
+  documentId     Int
+}
+
+model Document {
+  id                 Int     @id @default(autoincrement())
+  fullname           String?
+  accountNumber      String?
+  description        String? @db.Text
+  fileIdentitas      String? @db.Text
+  fileSLIK           String? @db.Text
+  fileJaminan        String? @db.Text
+  fileKredit         String? @db.Text
+  fileAspekKKeuangan String? @db.Text
+  fileMAUK           String? @db.Text
+  fileKepatuhan      String? @db.Text
+  fileLegal          String? @db.Text
+  fileCustody        String? @db.Text
+
+  status           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now())
+  userId           Int
+  User             User               @relation(fields: [userId], references: [id])
+  PermohonanKredit PermohonanKredit[]
+}

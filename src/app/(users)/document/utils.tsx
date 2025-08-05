@@ -1,0 +1,451 @@
+"use client";
+
+import { IFileList, IPermohonanKredit } from "@/components/IInterfaces";
+import { FilterOption } from "@/components/utils/FormUtils";
+import { FormOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { JenisPemohon } from "@prisma/client";
+import { Button, Input, Table, TableProps } from "antd";
+import moment from "moment";
+import { useEffect, useState } from "react";
+import { DetailPermohonan } from "../permohonan-kredit";
+
+export default function TableDokumen() {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [search, setSearch] = useState<string>();
+  const [jenisId, setJenisId] = useState<number>();
+  const [data, setData] = useState<IPermohonanKredit[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
+
+  const getData = () => {
+    setLoading(true);
+    fetch(
+      `/api/permohonan?page=${page}&pageSize=${pageSize}${
+        search ? "&search=" + search : ""
+      }${jenisId ? "&jenisId=" + jenisId : ""}`
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setData(res.data.map((d: IPermohonanKredit) => ({ ...d, key: d.id })));
+        setTotal(res.total);
+      })
+      .catch((err) => console.log(err));
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetch("/api/jenis-pemohon")
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 200)
+          setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
+      });
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      getData();
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [search, page, pageSize, jenisId]);
+
+  const columns: TableProps<IPermohonanKredit>["columns"] = [
+    {
+      title: "NO",
+      dataIndex: "no",
+      key: "no",
+      width: 50,
+      className: "text-xs text-center",
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{(page - 1) * pageSize + (index + 1)}</>;
+      },
+    },
+    {
+      title: "NAMA DEBITUR",
+      dataIndex: "fullname",
+      key: "fullname",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{record.fullname}</>;
+      },
+    },
+    {
+      title: "NOMOR NIK",
+      dataIndex: "nik",
+      key: "nik",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{record.NIK && record.NIK}</>;
+      },
+    },
+    {
+      title: "JENIS PEMOHON",
+      dataIndex: "jenisPemohon",
+      key: "jenisPemohon",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{record.JenisPemohon.name}</>;
+      },
+    },
+    {
+      title: "NAMA MARKETING",
+      dataIndex: "marketing",
+      key: "marketing",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{record.Document.User.fullname}</>;
+      },
+    },
+    {
+      title: "NO REKENING",
+      dataIndex: "account",
+      key: "account",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{record.Document.accountNumber}</>;
+      },
+    },
+    {
+      title: "FILE IDENTITAS",
+      dataIndex: "fileIdentitas",
+      key: "fileIdentitas",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            {record.Document.fileIdentitas &&
+              (JSON.parse(record.Document.fileIdentitas) as IFileList[])
+                .map((f) => f.name)
+                .join(",")}
+          </>
+        );
+      },
+    },
+    {
+      title: "FILE KEPATUHAN",
+      dataIndex: "fileKepatuhan",
+      key: "fileKepatuhan",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            {record.Document.fileKepatuhan &&
+              (JSON.parse(record.Document.fileKepatuhan) as IFileList[])
+                .map((f) => f.name)
+                .join(",")}
+          </>
+        );
+      },
+    },
+    {
+      title: "FILE MAUK",
+      dataIndex: "fileMAUK",
+      key: "fileMAUK",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            {record.Document.fileMAUK &&
+              (JSON.parse(record.Document.fileMAUK) as IFileList[])
+                .map((f) => f.name)
+                .join(",")}
+          </>
+        );
+      },
+    },
+    {
+      title: "FILE SLIK",
+      dataIndex: "fileSLIK",
+      key: "fileSLIK",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            {record.Document.fileSLIK &&
+              (JSON.parse(record.Document.fileSLIK) as IFileList[])
+                .map((f) => f.name)
+                .join(",")}
+          </>
+        );
+      },
+    },
+    {
+      title: "FILE ASPEK KEUANGAN",
+      dataIndex: "fileAspekKKeuangan",
+      key: "fileAspekKKeuangan",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            {record.Document.fileAspekKKeuangan &&
+              (JSON.parse(record.Document.fileAspekKKeuangan) as IFileList[])
+                .map((f) => f.name)
+                .join(",")}
+          </>
+        );
+      },
+    },
+    {
+      title: "FILE JAMINAN",
+      dataIndex: "fileJaminan",
+      key: "fileJaminan",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            {record.Document.fileJaminan &&
+              (JSON.parse(record.Document.fileJaminan) as IFileList[])
+                .map((f) => f.name)
+                .join(",")}
+          </>
+        );
+      },
+    },
+    {
+      title: "FILE KREDIT",
+      dataIndex: "fileKredit",
+      key: "fileKredit",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            {record.Document.fileKredit &&
+              (JSON.parse(record.Document.fileKredit) as IFileList[])
+                .map((f) => f.name)
+                .join(",")}
+          </>
+        );
+      },
+    },
+    {
+      title: "CREATED AT",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      className: "text-xs text-center",
+      width: 100,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{moment(record.createdAt).format("DD/MM/YYYY")}</>;
+      },
+    },
+    {
+      title: "UPDATED AT",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
+      className: "text-xs text-center",
+      width: 100,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return <>{moment(record.updatedAt).format("DD/MM/YYYY")}</>;
+      },
+    },
+    {
+      title: "ACTION",
+      dataIndex: "action",
+      key: "action",
+      className: "text-xs",
+      width: 80,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <div className="flex gap-2 justify-center" key={record.id}>
+            <DetailPermohonan data={record} />
+            <Button
+              icon={<FormOutlined />}
+              size="small"
+              type="primary"
+              style={{ backgroundColor: "green" }}
+              onClick={() =>
+                window &&
+                window.location.replace("/permohonan-kredit/" + record.id)
+              }
+            ></Button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  return (
+    <Table
+      title={() => (
+        <div>
+          <div className="border-b border-blue-500 py-2">
+            <h1 className="font-bold text-xl">Dokumen</h1>
+          </div>
+          <div className="flex my-2 gap-2 justify-between overflow-auto">
+            <div className="flex gap-2">
+              <FilterOption
+                items={jeniss.map((j) => ({ label: j.name, value: j.id }))}
+                value={jenisId}
+                onChange={(e: number) => setJenisId(e)}
+                width={150}
+              />
+            </div>
+            <div className="w-42">
+              <Input.Search
+                size="small"
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      columns={columns}
+      size="small"
+      bordered
+      loading={loading}
+      dataSource={data}
+      scroll={{ x: "max-content", y: 370 }}
+      pagination={{
+        size: "small",
+        total: total,
+        pageSizeOptions: [50, 100, 500, 1000, 10000],
+        defaultPageSize: pageSize,
+        onChange(page, pageSize) {
+          setPage(page);
+          setPageSize(pageSize);
+        },
+      }}
+    />
+  );
+}
