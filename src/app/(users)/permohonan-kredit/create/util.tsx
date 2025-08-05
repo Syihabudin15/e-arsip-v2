@@ -306,10 +306,10 @@ const defaultPermohonan: IPermohonanKredit = {
   status: true,
   createdAt: new Date(),
   updatedAt: new Date(),
-  jenisPemohonId: 1,
-  documentId: 1,
+  jenisPemohonId: 0,
+  documentId: 0,
   JenisPemohon: {
-    id: 1,
+    id: 0,
     name: "",
     keterangan: "",
 
@@ -318,7 +318,7 @@ const defaultPermohonan: IPermohonanKredit = {
     updatedAt: new Date(),
   },
   Document: {
-    id: 1,
+    id: 0,
     fullname: "",
     accountNumber: "",
     description: "",
@@ -335,9 +335,9 @@ const defaultPermohonan: IPermohonanKredit = {
     status: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-    userId: 1,
+    userId: 0,
     User: {
-      id: 1,
+      id: 0,
       fullname: "",
       username: "",
       password: "",
@@ -347,7 +347,7 @@ const defaultPermohonan: IPermohonanKredit = {
       status: true,
       createdAt: new Date(),
       updatedAt: new Date(),
-      roleId: 1,
+      roleId: 0,
     },
   },
 };
