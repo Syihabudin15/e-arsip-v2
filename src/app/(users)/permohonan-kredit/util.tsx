@@ -16,6 +16,7 @@ import { Button, Input, Modal, Table, TableProps, Tabs } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { PDFDocument } from "pdf-lib";
+import { useAccess } from "@/components/utils/PermissionUtil";
 
 export default function TablePermohonanKredit() {
   const [page, setPage] = useState(1);
@@ -26,6 +27,7 @@ export default function TablePermohonanKredit() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
+  const { access, hasAccess } = useAccess("/permohonan-kredit");
 
   const getData = async () => {
     setLoading(true);
@@ -206,8 +208,10 @@ export default function TablePermohonanKredit() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            <DetailPermohonan data={record} />
-            <DeletePermohonan data={record} getData={getData} />
+            {hasAccess("detail") && <DetailPermohonan data={record} />}
+            {hasAccess("delete") && (
+              <DeletePermohonan data={record} getData={getData} />
+            )}
           </div>
         );
       },
@@ -223,16 +227,19 @@ export default function TablePermohonanKredit() {
           </div>
           <div className="flex my-2 gap-2 justify-between overflow-auto">
             <div className="flex gap-2">
-              <Button
-                icon={<PlusCircleOutlined />}
-                type="primary"
-                size="small"
-                onClick={() =>
-                  window && window.location.replace("/permohonan-kredit/create")
-                }
-              >
-                New
-              </Button>
+              {hasAccess("write") && (
+                <Button
+                  icon={<PlusCircleOutlined />}
+                  type="primary"
+                  size="small"
+                  onClick={() =>
+                    window &&
+                    window.location.replace("/permohonan-kredit/create")
+                  }
+                >
+                  New
+                </Button>
+              )}
               <FilterOption
                 items={jeniss.map((j) => ({ label: j.name, value: j.id }))}
                 value={jenisId}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   DeleteOutlined,
   FormOutlined,
@@ -17,6 +18,7 @@ export default function TableRole() {
   const [data, setData] = useState<Role[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { access, hasAccess } = useAccess("/roles");
 
   const getData = async () => {
     setLoading(true);
@@ -38,6 +40,9 @@ export default function TableRole() {
     (async () => {
       await getData();
     })();
+  }, []);
+
+  useEffect(() => {
     const timeout = setTimeout(async () => {
       await getData();
     }, 200);
@@ -158,15 +163,19 @@ export default function TableRole() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            <DeleteRole data={record} getData={getData} />
-            <Button
-              size="small"
-              type="primary"
-              icon={<FormOutlined />}
-              onClick={() =>
-                window && window.location.replace("/roles/" + record.id)
-              }
-            ></Button>
+            {hasAccess("delete") && (
+              <DeleteRole data={record} getData={getData} />
+            )}
+            {hasAccess("update") && (
+              <Button
+                size="small"
+                type="primary"
+                icon={<FormOutlined />}
+                onClick={() =>
+                  window && window.location.replace("/roles/" + record.id)
+                }
+              ></Button>
+            )}
           </div>
         );
       },
@@ -182,16 +191,18 @@ export default function TableRole() {
           </div>
           <div className="flex my-2 gap-2 justify-between">
             <div className="flex gap-2">
-              <Button
-                icon={<PlusCircleOutlined />}
-                size="small"
-                type="primary"
-                onClick={() =>
-                  window && window.location.replace("/roles/create")
-                }
-              >
-                New
-              </Button>
+              {hasAccess("write") && (
+                <Button
+                  icon={<PlusCircleOutlined />}
+                  size="small"
+                  type="primary"
+                  onClick={() =>
+                    window && window.location.replace("/roles/create")
+                  }
+                >
+                  New
+                </Button>
+              )}
             </div>
             <div className="w-42">
               <Input.Search

@@ -11,12 +11,31 @@ async function main() {
   let roleId = roleFind ? roleFind.id : 1;
   if (!roleFind) {
     const permision: IPermission[] = [
-      { path: "/", access: ["read"] },
-      { path: "/role", access: ["read", "write", "delete"] },
-      { path: "/user", access: ["read", "write", "delete"] },
-      { path: "/jenis-pemohon", access: ["read", "write", "delete"] },
-      { path: "/permohonan-kredit", access: ["read", "write", "delete"] },
-      { path: "/dokumen", access: ["read", "write", "delete"] },
+      { path: "/dashboard", access: ["read"] },
+      {
+        path: "/roles",
+        access: ["read", "update", "write", "delete", "detail"],
+      },
+      {
+        path: "/users",
+        access: ["read", "update", "write", "delete", "detail"],
+      },
+      {
+        path: "/jenis-pemohon",
+        access: ["read", "update", "write", "delete", "detail"],
+      },
+      {
+        path: "/permohonan-kredit",
+        access: ["read", "update", "write", "delete", "detail"],
+      },
+      {
+        path: "/document",
+        access: ["read", "update", "write", "delete", "detail"],
+      },
+      {
+        path: "/logs",
+        access: ["read", "update", "write", "delete", "detail"],
+      },
     ];
 
     const roleSaved = await prisma.role.create({
@@ -36,19 +55,33 @@ async function main() {
   });
   if (!findUser) {
     const pass = await bcrypt.hash("Tsani182", 10);
-    await prisma.user.create({
-      data: {
-        fullname: "Syihabudin Tsani",
-        username: "syihabudin",
-        password: pass,
-        email: "syihabudin@gmail.com",
-        photo: null,
+    await prisma.user.createMany({
+      data: [
+        {
+          fullname: "SYIHABUDIN TSANI",
+          username: "syihabudin",
+          password: pass,
+          email: "syihabudin@gmail.com",
+          photo: null,
 
-        status: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        roleId: roleId,
-      },
+          status: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          roleId: roleId,
+        },
+        {
+          fullname: "OLDYWJK",
+          username: "oldy",
+          password: pass,
+          email: "oldy@gmail.com",
+          photo: null,
+
+          status: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          roleId: roleId,
+        },
+      ],
     });
   }
   console.log("Seeding succeesfully...");

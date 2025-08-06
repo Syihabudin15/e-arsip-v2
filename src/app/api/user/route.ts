@@ -2,6 +2,7 @@ import prisma from "@/components/Prisma";
 import { User } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import bcript from "bcrypt";
+import { logActivity } from "@/components/utils/Auth";
 
 export const GET = async (req: NextRequest) => {
   const search: string | undefined = <any>(
@@ -72,6 +73,15 @@ export const POST = async (req: NextRequest) => {
       where: { username: data.username },
     });
     if (find) {
+      await logActivity(
+        req,
+        "Tambah User",
+        "POST",
+        "user",
+        JSON.stringify(data),
+        JSON.stringify({ status: 400, msg: "Bad Request" }),
+        "Gagal menambahkan user karena username sudah digunakan"
+      );
       return NextResponse.json(
         { status: 400, msg: "Username telah digunakan" },
         { status: 400 }
@@ -79,6 +89,15 @@ export const POST = async (req: NextRequest) => {
     }
     const pass = await bcript.hash(data.password, 10);
     await prisma.user.create({ data: { ...data, password: pass } });
+    await logActivity(
+      req,
+      "Tambah User",
+      "POST",
+      "user",
+      JSON.stringify(data),
+      JSON.stringify({ status: 201, msg: "OK" }),
+      "Berhasil menambahkan user"
+    );
     return NextResponse.json({ status: 201, msg: "OK" }, { status: 201 });
   } catch (err) {
     console.log(err);
@@ -92,6 +111,15 @@ export const PUT = async (req: NextRequest) => {
       where: { id: id },
     });
     if (!find) {
+      await logActivity(
+        req,
+        "Gagal Update User",
+        "PUT",
+        "user",
+        JSON.stringify(data),
+        JSON.stringify({ status: 404, msg: "Bad Request" }),
+        "Gagal Update user karena user tidak ditemukan"
+      );
       return NextResponse.json(
         { status: 404, msg: "Uset not found" },
         { status: 404 }
@@ -101,6 +129,15 @@ export const PUT = async (req: NextRequest) => {
       where: { id: id },
       data: { ...data, updatedAt: new Date() },
     });
+    await logActivity(
+      req,
+      `${data.status ? "Update" : "Hapus"} User ${find.fullname}`,
+      data.status ? "PUT" : "DELETE",
+      "user",
+      JSON.stringify(data),
+      JSON.stringify({ status: 201, msg: "OK" }),
+      `Berhasil ${data.status ? "Update" : "Hapus"} user ${find.fullname}`
+    );
     return NextResponse.json({ status: 200, msg: "OK" }, { status: 200 });
   } catch (err) {
     console.log(err);

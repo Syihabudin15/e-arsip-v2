@@ -11,7 +11,7 @@ const { Paragraph } = Typography;
 export const FormInput = (params: IFormInput) => {
   return (
     <div
-      className={`flex ${
+      className={`${params.hide ? "hidden" : "flex"} ${
         params.align && params.align === "col"
           ? "flex-col gap-1"
           : "flex-row gap-2 items-center my-1"
@@ -87,10 +87,12 @@ export const FormUpload = ({
   value,
   label,
   setChange,
+  hide,
 }: {
   value: string | null;
   label: string;
   setChange: Function;
+  hide?: boolean;
 }) => {
   const [files, setFiles] = useState<IFileList[]>(
     value ? JSON.parse(value) : []
@@ -101,7 +103,11 @@ export const FormUpload = ({
   }, [files]);
 
   return (
-    <div className="flex justify-between my-2 items-center border-b border-gray-200 py-1">
+    <div
+      className={`${
+        hide ? "hidden" : "flex"
+      } justify-between my-2 items-center border-b border-gray-200 py-1`}
+    >
       <div>{label}</div>
       <div className="w-[70%]">
         <div className="italic text-xs opacity-80 my-2">

@@ -1,7 +1,8 @@
+import { useUser } from "@/components/contexts/UserContext";
 import { IDescription, IPermohonanKredit } from "@/components/IInterfaces";
 import { FormInput, FormUpload } from "@/components/utils/FormUtils";
 import { JenisPemohon, User } from "@prisma/client";
-import { Button, Modal, Select, Spin } from "antd";
+import { App, Button, Select, Spin } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 
@@ -17,6 +18,8 @@ export default function CreatePermohonanKredit({
   const [userss, setUserss] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [tempDesc, setTempDesc] = useState<string>();
+  const user = useUser();
+  const { modal } = App.useApp();
 
   useEffect(() => {
     setLoading(true);
@@ -36,6 +39,17 @@ export default function CreatePermohonanKredit({
           }
         });
     })();
+    setData({
+      ...data,
+      Document: {
+        ...data.Document,
+        userId:
+          user && user.role.roleName === "MARKETING"
+            ? user.id
+            : data.Document.userId,
+        User: user ? user : data.Document.User,
+      },
+    });
     setLoading(false);
   }, []);
 
@@ -60,12 +74,12 @@ export default function CreatePermohonanKredit({
       .then((res) => res.json())
       .then((res) => {
         if (res.status === 201) {
-          Modal.success({
+          modal.success({
             title: "BERHASIL",
             content: `Data berhasil ${record ? "di Update" : "Ditambahkan"}`,
           });
         } else {
-          Modal.error({
+          modal.error({
             title: "ERROR",
             content: res.msg,
           });
@@ -73,7 +87,7 @@ export default function CreatePermohonanKredit({
       })
       .catch((err) => {
         console.log(err);
-        Modal.error({
+        modal.error({
           title: "ERROR",
           content: "Internal Server Error",
         });
@@ -114,6 +128,7 @@ export default function CreatePermohonanKredit({
             }
             align="col"
             width={"48%"}
+            hide={user && user.role.roleName === "MARKETING" ? true : false}
           />
           <div style={{ width: "48%" }}>
             <div className="p-1">
@@ -121,7 +136,7 @@ export default function CreatePermohonanKredit({
             </div>
             <Select
               options={jeniss.map((j) => ({ label: j.name, value: j.id }))}
-              value={data.jenisPemohonId}
+              value={data.jenisPemohonId || undefined}
               style={{ width: "100%" }}
               onChange={(e) =>
                 setData({
@@ -139,7 +154,8 @@ export default function CreatePermohonanKredit({
             <Select
               options={userss.map((u) => ({ label: u.fullname, value: u.id }))}
               style={{ width: "100%" }}
-              value={data.Document.userId}
+              value={data.Document.userId || undefined}
+              disabled={user && user.role.roleName === "MARKETING"}
               onChange={(e) =>
                 setData({
                   ...data,
@@ -152,32 +168,36 @@ export default function CreatePermohonanKredit({
               }
             />
           </div>
-          <div className="w-full bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50 p-2 rounded font-bold">
-            <p>KETERANGAN</p>
-          </div>
-          {data.Document.description &&
-            (JSON.parse(data.Document.description) as IDescription[]).map(
-              (d: IDescription, i: number) => (
-                <FormInput
-                  type="area"
-                  label={"Keterangan " + d.date}
-                  disable
-                  value={d.desc}
-                  onChange={(e: string) => {}}
-                  align="col"
-                  width={"48%"}
-                  key={i}
-                />
-              )
-            )}
-          <FormInput
-            type="area"
-            label="Keterangan"
-            value={tempDesc}
-            onChange={(e: string) => setTempDesc(e)}
-            align="col"
-            width={"48%"}
-          />
+          {user && user.role.roleName !== "MARKETING" && (
+            <>
+              <div className="w-full bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50 p-2 rounded font-bold">
+                <p>KETERANGAN</p>
+              </div>
+              {data.Document.description &&
+                (JSON.parse(data.Document.description) as IDescription[]).map(
+                  (d: IDescription, i: number) => (
+                    <FormInput
+                      type="area"
+                      label={"Keterangan " + d.date}
+                      disable
+                      value={d.desc}
+                      onChange={(e: string) => {}}
+                      align="col"
+                      width={"48%"}
+                      key={i}
+                    />
+                  )
+                )}
+              <FormInput
+                type="area"
+                label="Keterangan"
+                value={tempDesc}
+                onChange={(e: string) => setTempDesc(e)}
+                align="col"
+                width={"48%"}
+              />
+            </>
+          )}
         </div>
         <div className="flex-1">
           <div className="w-full bg-gradient-to-br from-purple-500 to-green-500 text-gray-50 p-2 rounded font-bold">
@@ -197,84 +217,114 @@ export default function CreatePermohonanKredit({
                 })
               }
             />
-            <FormUpload
-              label="File Kepatuhan"
-              value={data.Document.fileKepatuhan}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileKepatuhan: e,
-                  },
-                })
-              }
-            />
-            <FormUpload
-              label="File MAUK"
-              value={data.Document.fileMAUK}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileMAUK: e,
-                  },
-                })
-              }
-            />
-            <FormUpload
-              label="File Aspek Keuangan"
-              value={data.Document.fileAspekKKeuangan}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileAspekKKeuangan: e,
-                  },
-                })
-              }
-            />
-            <FormUpload
-              label="File SLIK"
-              value={data.Document.fileSLIK}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileSLIK: e,
-                  },
-                })
-              }
-            />
-            <FormUpload
-              label="File Jaminan"
-              value={data.Document.fileJaminan}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileJaminan: e,
-                  },
-                })
-              }
-            />
-            <FormUpload
-              label="File Kredit"
-              value={data.Document.fileKredit}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileKredit: e,
-                  },
-                })
-              }
-            />
+            {user && user.role.roleName !== "MARKETING" && (
+              <>
+                <FormUpload
+                  label="File Kepatuhan"
+                  value={data.Document.fileKepatuhan}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileKepatuhan: e,
+                      },
+                    })
+                  }
+                />
+                <FormUpload
+                  label="File MAUK"
+                  value={data.Document.fileMAUK}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileMAUK: e,
+                      },
+                    })
+                  }
+                />
+                <FormUpload
+                  label="File Aspek Keuangan"
+                  value={data.Document.fileAspekKKeuangan}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileAspekKKeuangan: e,
+                      },
+                    })
+                  }
+                />
+                <FormUpload
+                  label="File SLIK"
+                  value={data.Document.fileSLIK}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileSLIK: e,
+                      },
+                    })
+                  }
+                />
+                <FormUpload
+                  label="File Jaminan"
+                  value={data.Document.fileJaminan}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileJaminan: e,
+                      },
+                    })
+                  }
+                />
+                <FormUpload
+                  label="File Kredit"
+                  value={data.Document.fileKredit}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileKredit: e,
+                      },
+                    })
+                  }
+                />
+                <FormUpload
+                  label="File Legal"
+                  value={data.Document.fileLegal}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileLegal: e,
+                      },
+                    })
+                  }
+                />
+                <FormUpload
+                  label="File Custody"
+                  value={data.Document.fileCustody}
+                  setChange={(e: string) =>
+                    setData({
+                      ...data,
+                      Document: {
+                        ...data.Document,
+                        fileCustody: e,
+                      },
+                    })
+                  }
+                />
+              </>
+            )}
           </div>
           <div className="flex justify-end mt-5 mb-2 gap-4">
             <Button

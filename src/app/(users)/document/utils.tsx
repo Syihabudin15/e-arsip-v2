@@ -8,6 +8,7 @@ import { Button, Input, Table, TableProps } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { DetailPermohonan } from "../permohonan-kredit";
+import { useAccess } from "@/components/utils/PermissionUtil";
 
 export default function TableDokumen() {
   const [page, setPage] = useState(1);
@@ -18,6 +19,7 @@ export default function TableDokumen() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
+  const { access, hasAccess } = useAccess("/document");
 
   const getData = async () => {
     setLoading(true);
@@ -44,6 +46,7 @@ export default function TableDokumen() {
           if (res.status === 200)
             setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
         });
+      console.log(access);
     })();
   }, []);
 
@@ -391,17 +394,19 @@ export default function TableDokumen() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            <DetailPermohonan data={record} />
-            <Button
-              icon={<FormOutlined />}
-              size="small"
-              type="primary"
-              style={{ backgroundColor: "green" }}
-              onClick={() =>
-                window &&
-                window.location.replace("/permohonan-kredit/" + record.id)
-              }
-            ></Button>
+            {hasAccess("detail") && <DetailPermohonan data={record} />}
+            {hasAccess("update") && (
+              <Button
+                icon={<FormOutlined />}
+                size="small"
+                type="primary"
+                style={{ backgroundColor: "green" }}
+                onClick={() =>
+                  window &&
+                  window.location.replace("/permohonan-kredit/" + record.id)
+                }
+              ></Button>
+            )}
           </div>
         );
       },

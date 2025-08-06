@@ -1,13 +1,14 @@
 "use client";
 
 import { FormInput } from "@/components/utils/FormUtils";
+import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   DeleteOutlined,
   FormOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
 import { JenisPemohon } from "@prisma/client";
-import { Button, Input, Modal, Table, TableProps, Typography } from "antd";
+import { App, Button, Input, Modal, Table, TableProps, Typography } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 const { Paragraph } = Typography;
@@ -19,6 +20,7 @@ export default function TableJenisPemohon() {
   const [data, setData] = useState<JenisPemohon[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { access, hasAccess } = useAccess("/jenis-pemohon");
 
   const getData = async () => {
     setLoading(true);
@@ -40,6 +42,9 @@ export default function TableJenisPemohon() {
     (async () => {
       await getData();
     })();
+  }, []);
+
+  useEffect(() => {
     const timeout = setTimeout(async () => {
       await getData();
     }, 200);
@@ -166,8 +171,12 @@ export default function TableJenisPemohon() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            <UpsertJenisPemohon data={record} getData={getData} />
-            <DeleteJenisPemohon data={record} getData={getData} />
+            {hasAccess("update") && (
+              <UpsertJenisPemohon data={record} getData={getData} />
+            )}
+            {hasAccess("delete") && (
+              <DeleteJenisPemohon data={record} getData={getData} />
+            )}
           </div>
         );
       },
@@ -183,7 +192,7 @@ export default function TableJenisPemohon() {
           </div>
           <div className="flex my-2 gap-2 justify-between">
             <div className="flex gap-2">
-              <UpsertJenisPemohon getData={getData} />
+              {hasAccess("write") && <UpsertJenisPemohon getData={getData} />}
             </div>
             <div className="w-42">
               <Input.Search
@@ -194,6 +203,7 @@ export default function TableJenisPemohon() {
           </div>
         </div>
       )}
+      rowKey={"id"}
       columns={columns}
       size="small"
       bordered
@@ -224,6 +234,7 @@ const UpsertJenisPemohon = ({
   const [tempData, setTempData] = useState(data || defaultJenisPemohon);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { modal } = App.useApp();
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -237,7 +248,7 @@ const UpsertJenisPemohon = ({
       .then((res) => res.json())
       .then((res) => {
         if (res.status === 201 || res.status === 200) {
-          Modal.success({
+          modal.success({
             title: "BERHASIL",
             content: `Data ${data ? data.name : tempData.name} berhasil ${
               data ? "di Update" : "Ditambahkan"
@@ -247,12 +258,12 @@ const UpsertJenisPemohon = ({
           setOpen(false);
           return;
         }
-        Modal.error({ title: "ERROR", content: res.msg });
+        modal.error({ title: "ERROR", content: res.msg });
         setLoading(false);
       })
       .catch((err) => {
         console.log(err);
-        Modal.error({ title: "ERROR", content: "Internal Server Error" });
+        modal.error({ title: "ERROR", content: "Internal Server Error" });
       });
     setLoading(false);
   };
@@ -307,6 +318,7 @@ const DeleteJenisPemohon = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { modal } = App.useApp();
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -320,7 +332,7 @@ const DeleteJenisPemohon = ({
       .then((res) => res.json())
       .then((res) => {
         if (res.status === 201 || res.status === 200) {
-          Modal.success({
+          modal.success({
             title: "BERHASIL",
             content: `Data ${data && data.name} berhasil dihapus`,
           });
@@ -328,7 +340,7 @@ const DeleteJenisPemohon = ({
           setOpen(false);
           return;
         }
-        Modal.error({ title: "ERROR", content: res.msg });
+        modal.error({ title: "ERROR", content: res.msg });
         setLoading(false);
       })
       .catch((err) => {

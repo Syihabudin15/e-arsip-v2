@@ -38,6 +38,9 @@ model User {
   role      Role       @relation(fields: [roleId], references: [id])
   roleId    Int
   Document  Document[]
+  Logs      Logs[]
+
+  @@index([roleId])
 }
 
 model JenisPemohon {
@@ -63,6 +66,10 @@ model PermohonanKredit {
   jenisPemohonId Int
   Document       Document     @relation(fields: [documentId], references: [id])
   documentId     Int
+
+  @@index([jenisPemohonId])
+  @@index([documentId])
+  @@index([createdAt])
 }
 
 model Document {
@@ -86,4 +93,27 @@ model Document {
   userId           Int
   User             User               @relation(fields: [userId], references: [id])
   PermohonanKredit PermohonanKredit[]
+
+  @@index([userId])
+}
+
+model Logs {
+  id           Int     @id @default(autoincrement())
+  name         String
+  method       String
+  table        String
+  path         String
+  serverIP     String
+  userAgent    String?
+  sendData     String
+  returnStatus String
+  detail       String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+
+  @@index([userId])
+  @@index([createdAt])
 }

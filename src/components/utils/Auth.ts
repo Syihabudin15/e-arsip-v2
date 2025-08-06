@@ -3,6 +3,8 @@ import { jwtVerify, SignJWT } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { JwtPayload } from "jsonwebtoken";
 import { IUser } from "../IInterfaces";
+import { hasAccess } from "./PermissionUtil";
+import prisma from "../Prisma";
 
 const secretKey = new TextEncoder().encode(
   process.env.APP_AUTH_KEY || "secretcode"
@@ -43,6 +45,14 @@ export async function getSession(): Promise<JwtPayload | null> {
 export async function refreshToken(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
   if (!session) return NextResponse.redirect(new URL("/", request.url));
+  const payload = await getSession();
+  if (!payload) return NextResponse.redirect(new URL("/", request.url));
+
+  const pathname = request.nextUrl.pathname;
+  const access = hasAccess(payload.user.role, pathname, "read");
+  if (!access)
+    return NextResponse.redirect(new URL("/unauthorize", request.url));
+
   const parsed = await decrypt(session);
   parsed.expires = new Date(Date.now() + 3600 * 1000 * 5);
 
@@ -59,4 +69,38 @@ export async function refreshToken(request: NextRequest) {
     expires: parsed.expires,
   });
   return res;
+}
+
+export async function logActivity(
+  req: NextRequest,
+  name: string,
+  method: string,
+  table: string,
+  sendData: string,
+  returnStatus: string,
+  detail: string,
+  userId?: number
+) {
+  try {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    const session = await getSession();
+
+    await prisma.logs.create({
+      data: {
+        name,
+        method,
+        table,
+        path: req.nextUrl.pathname,
+        serverIP: ip,
+        userAgent: userAgent,
+        sendData,
+        returnStatus,
+        detail,
+        userId: userId ? userId : session ? session.user.id : null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to log activity:", error);
+  }
 }

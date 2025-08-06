@@ -1,6 +1,7 @@
 "use client";
 
 import { FormInput } from "@/components/utils/FormUtils";
+import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   DeleteOutlined,
   FormOutlined,
@@ -23,6 +24,7 @@ export default function TableUser() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { access, hasAccess } = useAccess("/users");
 
   const getData = async () => {
     setLoading(true);
@@ -43,6 +45,7 @@ export default function TableUser() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      await getData();
       await fetch("/api/role")
         .then((res) => res.json())
         .then((res) => {
@@ -53,9 +56,6 @@ export default function TableUser() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      await getData();
-    })();
     const timeout = setTimeout(async () => {
       await getData();
     }, 200);
@@ -206,8 +206,12 @@ export default function TableUser() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            <DeleteUser data={record} getData={getData} />
-            <UpsertUser data={record} getData={getData} role={roles} />
+            {hasAccess("delete") && (
+              <DeleteUser data={record} getData={getData} />
+            )}
+            {hasAccess("update") && (
+              <UpsertUser data={record} getData={getData} role={roles} />
+            )}
           </div>
         );
       },
@@ -223,7 +227,9 @@ export default function TableUser() {
           </div>
           <div className="flex my-2 gap-2 justify-between">
             <div className="flex gap-2">
-              <UpsertUser getData={getData} role={roles} />
+              {hasAccess("write") && (
+                <UpsertUser getData={getData} role={roles} />
+              )}
             </div>
             <div className="w-42">
               <Input.Search

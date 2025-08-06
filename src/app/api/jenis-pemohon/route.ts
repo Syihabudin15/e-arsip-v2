@@ -1,4 +1,5 @@
 import prisma from "@/components/Prisma";
+import { logActivity } from "@/components/utils/Auth";
 import { JenisPemohon } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -59,17 +60,44 @@ export const POST = async (req: NextRequest) => {
           where: { id: find.id },
           data: { ...data, status: true, updatedAt: new Date() },
         });
+        await logActivity(
+          req,
+          "Tambah Jenis Pemohon",
+          "POST",
+          "jenisPemohon",
+          JSON.stringify(data),
+          JSON.stringify({ status: 200, msg: "OK" }),
+          "Berhasil Menambahkan Jenis Pemohon"
+        );
         return NextResponse.json(
           { msg: "Data sudah tersedia!", status: 200 },
           { status: 200 }
         );
       }
+      await logActivity(
+        req,
+        "Tambah Jenis Pemohon",
+        "POST",
+        "jenisPemohon",
+        JSON.stringify(data),
+        JSON.stringify({ status: 400, msg: "Bad Request" }),
+        "Gagal Menambahkan Jenis Pemohon"
+      );
       return NextResponse.json(
         { msg: "Data sudah tersedia!", status: 400 },
         { status: 400 }
       );
     }
     await prisma.jenisPemohon.create({ data });
+    await logActivity(
+      req,
+      "Tambah Jenis Pemohon",
+      "POST",
+      "jenisPemohon",
+      JSON.stringify(data),
+      JSON.stringify({ status: 200, msg: "OK" }),
+      "Berhasil Menambahkan Jenis Pemohon"
+    );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
     console.log(err);
@@ -90,6 +118,15 @@ export const PUT = async (req: NextRequest) => {
       );
     }
     await prisma.jenisPemohon.update({ where: { id: id }, data });
+    await logActivity(
+      req,
+      `${data.status ? "Update" : "Hapus"} Jenis Pemohon ${find.name}`,
+      data.status ? "PUT" : "DELETE",
+      "jenisPemohon",
+      JSON.stringify(data),
+      JSON.stringify({ status: 200, msg: "OK" }),
+      `Berhasil ${data.status ? "Update" : "Hapus"} Jenis Pemohon ${find.name}`
+    );
     return NextResponse.json({ msg: "OK", status: 200 }, { status: 200 });
   } catch (err) {
     console.log(err);

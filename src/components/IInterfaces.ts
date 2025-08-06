@@ -25,6 +25,7 @@ export interface IFormInput {
   width?: number | string;
   align?: "row" | "col";
   disable?: boolean;
+  hide?: boolean;
   options?: { label: any; value: any }[];
 }
 
@@ -50,4 +51,10 @@ export interface IMenu {
   path: string;
   name: string;
   access: string[];
+}
+
+export interface WithAccessOptions {
+  path: string; // path yang mau dicek
+  required?: string[]; // izin yang diperlukan, default: []
+  redirectTo?: string; // kemana redirect kalau tidak punya akses
 }

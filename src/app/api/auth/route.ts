@@ -1,11 +1,25 @@
 import prisma from "@/components/Prisma";
-import { getSession, signIn, signOut } from "@/components/utils/Auth";
+import {
+  getSession,
+  logActivity,
+  signIn,
+  signOut,
+} from "@/components/utils/Auth";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 
 export const POST = async (req: NextRequest) => {
   const { username, password } = await req.json();
   if (!username || !password) {
+    await logActivity(
+      req,
+      "Gagal Login",
+      "POST",
+      "user",
+      JSON.stringify({ username, password }),
+      JSON.stringify({ status: 400, msg: "Bad Request" }),
+      "Percobaan masuk gagal karena username/password tidak diinputkan"
+    );
     return NextResponse.json(
       { msg: "Mohon lengkapi username & password!", status: 404 },
       { status: 404 }
@@ -19,6 +33,15 @@ export const POST = async (req: NextRequest) => {
       },
     });
     if (!find) {
+      await logActivity(
+        req,
+        "Gagal Login",
+        "POST",
+        "user",
+        JSON.stringify({ username, password }),
+        JSON.stringify({ status: 401, msg: "Unauthorize" }),
+        "Percobaan masuk gagal karena username tidak ditemukan"
+      );
       return NextResponse.json(
         { msg: "Username atau password salah!", status: 401 },
         { status: 401 }
@@ -26,11 +49,30 @@ export const POST = async (req: NextRequest) => {
     }
     const comparePass = await bcrypt.compare(password, find.password);
     if (!comparePass) {
+      await logActivity(
+        req,
+        "Gagal Login",
+        "POST",
+        "user",
+        JSON.stringify({ username, password }),
+        JSON.stringify({ status: 401, msg: "Unauthorize" }),
+        "Percobaan masuk gagal karena passwowrd salah"
+      );
       return NextResponse.json(
         { msg: "Username atau password salah!", status: 401 },
         { status: 401 }
       );
     }
+    await logActivity(
+      req,
+      "Berhasil Login",
+      "POST",
+      "user",
+      JSON.stringify({ username, password }),
+      JSON.stringify({ status: 200, msg: "OK" }),
+      "Berhasil Login",
+      find.id
+    );
     await signIn(find);
     return NextResponse.json({ msg: "OK", status: 200 }, { status: 200 });
   } catch (err) {
@@ -78,9 +120,18 @@ export const GET = async () => {
   }
 };
 
-export const DELETE = async () => {
+export const DELETE = async (req: NextRequest) => {
   try {
     await signOut();
+    await logActivity(
+      req,
+      "Logout",
+      "DELETE",
+      "-",
+      "-",
+      JSON.stringify({ status: 200, msg: "OK" }),
+      "Berhasil Logout, Hapus Session"
+    );
     return NextResponse.json({ msg: "OK", status: 200 }, { status: 200 });
   } catch (err) {
     console.log(err);

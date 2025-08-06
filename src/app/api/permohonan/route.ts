@@ -1,5 +1,6 @@
 import { IPermohonanKredit } from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
+import { logActivity } from "@/components/utils/Auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -65,11 +66,20 @@ export const POST = async (req: NextRequest) => {
       const saveDoc = await prisma.document.create({
         data: doc,
       });
-      const savePermohonan = await prisma.permohonanKredit.create({
+      await prisma.permohonanKredit.create({
         data: { ...permohonan, documentId: saveDoc.id },
       });
       return saveDoc;
     });
+    await logActivity(
+      req,
+      "Tambah Permohonan Kredit",
+      "POST",
+      "permohonanKredit",
+      JSON.stringify(data),
+      JSON.stringify({ status: 201, msg: "OK" }),
+      "Berhasil Menambahkan Permohonan Kredit"
+    );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
     console.log(err);
@@ -85,6 +95,17 @@ export const PUT = async (req: NextRequest) => {
       prisma.permohonanKredit.update({ where: { id: id }, data: permohonan }),
       prisma.document.update({ where: { id: docId }, data: doc }),
     ]);
+    await logActivity(
+      req,
+      `${data.status ? "Update" : "Hapus"}  Permohonan Kredit ${data.fullname}`,
+      data.status ? "PUT" : "DELETE",
+      "permohonanKredit",
+      JSON.stringify(data),
+      JSON.stringify({ status: 201, msg: "OK" }),
+      `Berhasil ${data.status ? "Update" : "Hapus"} Permohonan Kredit ${
+        data.fullname
+      }`
+    );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
     console.log(err);

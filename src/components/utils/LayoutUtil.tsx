@@ -155,7 +155,7 @@ export const menuItems = [
     key: "/roles",
   },
   {
-    label: "Logs",
+    label: "Logs Activitas",
     icon: <RobotOutlined />,
     key: "/logs",
   },
@@ -195,7 +195,7 @@ export const MenuMobile = () => {
   return (
     <>
       {user && (
-        <div className="block sm:hidden">
+        <div className="block sm:hidden p-1">
           <Button
             icon={<MenuOutlined />}
             onClick={() => setOpen(true)}

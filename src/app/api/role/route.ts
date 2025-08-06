@@ -1,4 +1,5 @@
 import prisma from "@/components/Prisma";
+import { logActivity } from "@/components/utils/Auth";
 import { Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -50,6 +51,15 @@ export const POST = async (req: NextRequest) => {
       where: { roleName: data.roleName },
     });
     if (find) {
+      await logActivity(
+        req,
+        "Gagal Tambah Role",
+        "POST",
+        "role",
+        JSON.stringify(data),
+        JSON.stringify({ status: 400, msg: "Bad Request" }),
+        "Gagal Menambahkan Role karena nama role sudah tersedia"
+      );
       return NextResponse.json(
         { data: null, status: 400, msg: "Nama Role sudah tersedia!" },
         { status: 400 }
@@ -58,6 +68,15 @@ export const POST = async (req: NextRequest) => {
     await prisma.role.create({
       data,
     });
+    await logActivity(
+      req,
+      "Tambah Role",
+      "POST",
+      "role",
+      JSON.stringify(data),
+      JSON.stringify({ status: 201, msg: "OK" }),
+      "Berhasil Menambahkan Role"
+    );
     return NextResponse.json({ data, status: 201, msg: "OK" }, { status: 201 });
   } catch (err) {
     console.log(err);
@@ -73,6 +92,17 @@ export const PUT = async (req: NextRequest) => {
       where: { id: id },
     });
     if (!find) {
+      await logActivity(
+        req,
+        `Gagal ${data.status ? "Update" : "Hapus"} Role ${data.roleName}`,
+        data.status ? "PUT" : "DELETE",
+        "role",
+        JSON.stringify(data),
+        JSON.stringify({ status: 404, msg: "Not Found" }),
+        `Gagal ${
+          data.status ? "Update" : "Hapus"
+        } Role karena data tidak ditemukan`
+      );
       return NextResponse.json(
         { data: null, status: 404, msg: "Data role tidak ditemukan!" },
         { status: 404 }
@@ -82,6 +112,15 @@ export const PUT = async (req: NextRequest) => {
       where: { id: id },
       data: { ...data, updatedAt: new Date() },
     });
+    await logActivity(
+      req,
+      `${data.status ? "Update" : "Hapus"} Role ${find.roleName}`,
+      data.status ? "PUT" : "DELETE",
+      "role",
+      JSON.stringify(data),
+      JSON.stringify({ status: 201, msg: "OK" }),
+      `Berhasil ${data.status ? "Update" : "Hapus"} Role ${find.roleName}`
+    );
     return NextResponse.json({ data, status: 200, msg: "OK" }, { status: 200 });
   } catch (err) {
     console.log(err);
