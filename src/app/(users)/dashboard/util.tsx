@@ -171,45 +171,108 @@ export default function DashboardMaster() {
   return (
     <div className="p-2 h-[92vh] overflow-auto">
       {/* Cards */}
-      <Row gutter={16}>
-        <Col span={6}>
-          <Card title="Total Users">
+      <Row gutter={[16, 16]} wrap>
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Users"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <p className="font-bold text-xl">{cards.totalUsers}</p>
           </Card>
         </Col>
-        <Col span={6}>
-          <Card title="Total Roles">
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Roles"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <p className="font-bold text-xl">{cards.totalRoles}</p>
           </Card>
         </Col>
-        <Col span={6}>
-          <Card title="Total Dokumen">
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Dokumen"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <p className="font-bold text-xl">{cards.totalDocuments}</p>
           </Card>
         </Col>
-        <Col span={6}>
-          <Card title="Pengajuan Hari Ini">
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Pengajuan Hari Ini"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <p className="font-bold text-xl">{cards.totalPermohonanHariIni}</p>
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={16} className="my-4">
-        <Col span={12}>
-          <Card title="Aktivitas Logs 7 Hari">
+      <Row gutter={[16, 16]} className="my-4">
+        <Col span={12} xs={24} lg={12}>
+          <Card
+            title="Aktivitas Logs 7 Hari"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <Line data={logData} xField="date" yField="count" />
           </Card>
         </Col>
-        <Col span={12}>
-          <Card title="Pengajuan Kredit 6 Bulan">
+        <Col span={12} xs={24} lg={12}>
+          <Card
+            title="Pengajuan Kredit 6 Bulan"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <Line data={pengajuanData} xField="date" yField="count" />
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={16} className="my-4">
-        <Col span={12}>
-          <Card title="Permohonan Terbaru">
+      <Row gutter={[16, 16]} className="my-4">
+        <Col span={12} xs={24}>
+          <Card
+            title="Permohonan Terbaru"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <Table
               dataSource={tables.lastPermohonan.map((d: any) => ({
                 ...d,
@@ -223,8 +286,17 @@ export default function DashboardMaster() {
             />
           </Card>
         </Col>
-        <Col span={12}>
-          <Card title="Aktivitas User Terakhir">
+        <Col span={12} xs={24}>
+          <Card
+            title="Aktivitas User Terakhir"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
             <Table
               dataSource={tables.lastLogs.map((d: any) => ({
                 ...d,
