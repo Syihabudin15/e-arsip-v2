@@ -1,14 +1,19 @@
 "use client";
 
-import { IFileList, IPermohonanKredit } from "@/components/IInterfaces";
+import {
+  EditActivity,
+  IFileList,
+  IPermohonanKredit,
+} from "@/components/IInterfaces";
 import { FilterOption } from "@/components/utils/FormUtils";
 import { FormOutlined } from "@ant-design/icons";
 import { JenisPemohon } from "@prisma/client";
-import { Button, Input, Table, TableProps } from "antd";
+import { Button, Input, Table, TableProps, Typography } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { DetailPermohonan } from "../permohonan-kredit";
 import { useAccess } from "@/components/utils/PermissionUtil";
+const { Paragraph } = Typography;
 
 export default function TableDokumen() {
   const [page, setPage] = useState(1);
@@ -342,6 +347,46 @@ export default function TableDokumen() {
       },
     },
     {
+      title: "LAST ACTIVITY",
+      dataIndex: "activity",
+      key: "activity",
+      className: "text-xs",
+      width: 300,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        const parse = record.Document.activity
+          ? (JSON.parse(record.Document.activity) as EditActivity[])
+          : [];
+        return (
+          <>
+            <Paragraph
+              ellipsis={{
+                rows: 1,
+                expandable: "collapsible",
+              }}
+              style={{ fontSize: 12 }}
+            >
+              {parse.map((p) => (
+                <>
+                  {"{"}
+                  {p.time} | {p.desc}
+                  {"};"} <br />
+                  <br />
+                </>
+              ))}
+            </Paragraph>
+          </>
+        );
+      },
+    },
+    {
       title: "CREATED AT",
       dataIndex: "createdAt",
       key: "createdAt",
@@ -438,6 +483,7 @@ export default function TableDokumen() {
           </div>
         </div>
       )}
+      rowKey={"id"}
       columns={columns}
       size="small"
       bordered

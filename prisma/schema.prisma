@@ -86,6 +86,7 @@ model Document {
   fileKepatuhan      String? @db.Text
   fileLegal          String? @db.Text
   fileCustody        String? @db.Text
+  activity           String? @db.Text
 
   status           Boolean            @default(true)
   createdAt        DateTime           @default(now())

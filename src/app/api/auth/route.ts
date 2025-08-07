@@ -122,7 +122,19 @@ export const GET = async () => {
 
 export const DELETE = async (req: NextRequest) => {
   try {
-    await signOut();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { msg: "Unauthorize", status: 401 },
+        { status: 401 }
+      );
+    }
+    const user = await prisma.user.findFirst({
+      where: { id: session.user.id },
+      include: {
+        role: true,
+      },
+    });
     await logActivity(
       req,
       "Logout",
@@ -130,8 +142,10 @@ export const DELETE = async (req: NextRequest) => {
       "-",
       "-",
       JSON.stringify({ status: 200, msg: "OK" }),
-      "Berhasil Logout, Hapus Session"
+      "Berhasil Logout, Hapus Session",
+      user?.id
     );
+    await signOut();
     return NextResponse.json({ msg: "OK", status: 200 }, { status: 200 });
   } catch (err) {
     console.log(err);

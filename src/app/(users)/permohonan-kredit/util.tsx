@@ -256,6 +256,7 @@ export default function TablePermohonanKredit() {
           </div>
         </div>
       )}
+      rowKey={"id"}
       columns={columns}
       size="small"
       bordered

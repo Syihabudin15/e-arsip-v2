@@ -88,11 +88,13 @@ export const FormUpload = ({
   label,
   setChange,
   hide,
+  setActivity,
 }: {
   value: string | null;
   label: string;
   setChange: Function;
   hide?: boolean;
+  setActivity?: Function;
 }) => {
   const [files, setFiles] = useState<IFileList[]>(
     value ? JSON.parse(value) : []
@@ -111,10 +113,17 @@ export const FormUpload = ({
       <div>{label}</div>
       <div className="w-[70%]">
         <div className="italic text-xs opacity-80 my-2">
-          <FormUploadListFile files={files} setFiles={setFiles} />
+          <FormUploadListFile
+            files={files}
+            setFiles={setFiles}
+            label={label}
+            setActivity={setActivity}
+          />
         </div>
         <FormUploadInputFile
           setFiles={(newFile: IFileList) => setFiles([...files, newFile])}
+          label={label}
+          setActivity={setActivity}
         />
       </div>
     </div>
@@ -124,9 +133,13 @@ export const FormUpload = ({
 const FormUploadListFile = ({
   files,
   setFiles,
+  setActivity,
+  label,
 }: {
   files: IFileList[];
   setFiles: Function;
+  setActivity?: Function;
+  label: string;
 }) => {
   const [loading, setLoading] = useState(false);
 
@@ -168,7 +181,21 @@ const FormUploadListFile = ({
             type="primary"
             danger
             loading={loading}
-            onClick={() => handleDeleteFiles(f.file)}
+            onClick={() => {
+              handleDeleteFiles(f.file);
+              if (setActivity) {
+                const txt = `Hapus File ${label} (${f.name})`;
+                setActivity((prev: string[]) => {
+                  prev = prev
+                    ? prev.filter(
+                        (p) => !p.includes(`Hapus File ${label} (${f.name})`)
+                      )
+                    : [];
+                  prev.push(txt);
+                  return prev;
+                });
+              }
+            }}
           ></Button>
         </div>
       ))}
@@ -176,7 +203,15 @@ const FormUploadListFile = ({
   );
 };
 
-const FormUploadInputFile = ({ setFiles }: { setFiles: Function }) => {
+const FormUploadInputFile = ({
+  setFiles,
+  setActivity,
+  label,
+}: {
+  setFiles: Function;
+  setActivity?: Function;
+  label: string;
+}) => {
   const [loading, setLoading] = useState(false);
   const [currFiles, setCurrFiles] = useState<IFileList>({
     name: "",
@@ -191,6 +226,18 @@ const FormUploadInputFile = ({ setFiles }: { setFiles: Function }) => {
     })
       .then(() => {
         setCurrFiles({ ...currFiles, file: "" });
+        if (setActivity) {
+          const txt = `Hapus File ${label} (${currFiles.name})`;
+          setActivity((prev: string[]) => {
+            prev = prev
+              ? prev.filter(
+                  (p) => !p.includes(`Hapus File ${label} (${currFiles.name})`)
+                )
+              : [];
+            prev.push(txt);
+            return prev;
+          });
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -283,6 +330,19 @@ const FormUploadInputFile = ({ setFiles }: { setFiles: Function }) => {
         disabled={!currFiles.file}
         onClick={() => {
           setFiles(currFiles);
+          if (setActivity) {
+            const txt = `Upload File ${label} (${currFiles.name})`;
+            setActivity((prev: string[]) => {
+              prev = prev
+                ? prev.filter(
+                    (p) =>
+                      !p.includes(`Upload File ${label} (${currFiles.name})`)
+                  )
+                : [];
+              prev.push(txt);
+              return prev;
+            });
+          }
           setCurrFiles({ name: "", file: "" });
         }}
       >

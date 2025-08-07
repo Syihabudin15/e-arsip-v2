@@ -33,7 +33,7 @@ export const POST = async (req: NextRequest) => {
         "document",
         JSON.stringify({ fileName: folder, fileType, resourcetype, publicId }),
         JSON.stringify({ status: 400, msg: "Bad Request" }),
-        "Gagal Upload file " + folder
+        "Gagal Upload file " + publicId
       );
       return NextResponse.json(
         { data: null, status: 400, msg: "Gagal upload file" },
@@ -47,7 +47,7 @@ export const POST = async (req: NextRequest) => {
       "document",
       JSON.stringify({ fileName: folder, fileType, resourcetype, publicId }),
       JSON.stringify({ status: 201, msg: "OK" }),
-      "Berhaisl Upload file " + folder
+      "Berhasil Upload file " + publicId
     );
     return NextResponse.json(
       { data: result.secure_url, status: 200, msg: "OK" },

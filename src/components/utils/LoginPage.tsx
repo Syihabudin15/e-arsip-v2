@@ -12,12 +12,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string>();
 
-  const handleSubmit = (e: { username: string; password: string }) => {
+  const handleSubmit = async (e: { username: string; password: string }) => {
     if (!e || !e.username || !e.password) {
       return setErr("Mohon lengkapi username & password");
     }
     setLoading(true);
-    fetch("/api/auth", {
+    await fetch("/api/auth", {
       method: "POST",
       body: JSON.stringify(e),
     })
@@ -38,8 +38,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center sm:justify-end items-center w-full h-[92vh] bg-gradient-to-br from-blue-500 to-red-400">
-      <div className="bg-slate-50 p-5 h-[50vh] sm:h-full w-[90vw] sm:w-[30vw] flex flex-col items-center justify-center rounded">
+    <div
+      className="flex justify-center sm:justify-end items-center w-full h-[92vh] bg-gradient-to-br from-blue-500 to-red-400"
+      style={{
+        backgroundImage: "url(/login-bg3.png)",
+        ...(window &&
+          window.innerWidth > 600 && {
+            backgroundSize: 900,
+          }),
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="h-full w-full hidden sm:flex justify-center items-center">
+        {/* <Image
+          src={"/login-bg.jpeg"}
+          alt="Login background"
+          width={920}
+          height={900}
+        /> */}
+        {/* <img src={"/login-bg.jpeg"} className="rounded-2xl" /> */}
+      </div>
+      <div className="bg-slate-50 p-5 h-[50vh] sm:h-full w-[90vw] sm:w-[38vw] flex flex-col items-center justify-center rounded">
         <Image
           src={"/rifi-login.jpeg"}
           alt="App Logo"

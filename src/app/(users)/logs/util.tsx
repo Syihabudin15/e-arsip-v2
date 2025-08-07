@@ -370,24 +370,6 @@ export default function TableLogs() {
         return <>{moment(record.createdAt).format("DD/MM/YYYY")}</>;
       },
     },
-    {
-      title: "UPDATED AT",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      className: "text-xs text-center",
-      width: 100,
-      onHeaderCell: () => {
-        return {
-          ["style"]: {
-            textAlign: "center",
-            fontSize: 12,
-          },
-        };
-      },
-      render(value, record, index) {
-        return <>{moment(record.updatedAt).format("DD/MM/YYYY")}</>;
-      },
-    },
   ];
 
   return (

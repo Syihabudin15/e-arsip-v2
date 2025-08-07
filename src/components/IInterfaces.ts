@@ -58,3 +58,8 @@ export interface WithAccessOptions {
   required?: string[]; // izin yang diperlukan, default: []
   redirectTo?: string; // kemana redirect kalau tidak punya akses
 }
+
+export interface EditActivity {
+  time: string;
+  desc: string;
+}

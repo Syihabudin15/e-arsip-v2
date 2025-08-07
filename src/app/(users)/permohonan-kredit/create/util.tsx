@@ -1,5 +1,9 @@
 import { useUser } from "@/components/contexts/UserContext";
-import { IDescription, IPermohonanKredit } from "@/components/IInterfaces";
+import {
+  EditActivity,
+  IDescription,
+  IPermohonanKredit,
+} from "@/components/IInterfaces";
 import { FormInput, FormUpload } from "@/components/utils/FormUtils";
 import { JenisPemohon, User } from "@prisma/client";
 import { App, Button, Select, Spin } from "antd";
@@ -18,6 +22,7 @@ export default function CreatePermohonanKredit({
   const [userss, setUserss] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [tempDesc, setTempDesc] = useState<string>();
+  const [activity, setActivity] = useState<string[]>([]);
   const user = useUser();
   const { modal } = App.useApp();
 
@@ -50,6 +55,8 @@ export default function CreatePermohonanKredit({
         User: user ? user : data.Document.User,
       },
     });
+    setActivity([]);
+    setTempDesc(undefined);
     setLoading(false);
   }, []);
 
@@ -66,6 +73,16 @@ export default function CreatePermohonanKredit({
         : [];
       temp.push({ date: moment().format("DD/MM/YYYY"), desc: tempDesc });
       data.Document.description = JSON.stringify(temp);
+    }
+    if (record && activity) {
+      const temp = data.Document.activity
+        ? (JSON.parse(data.Document.activity) as EditActivity[])
+        : [];
+      temp.push({
+        time: moment().format("DD/MM/YYYY HH:mm"),
+        desc: `${user?.fullname}: ${activity.join(",")}`,
+      });
+      data.Document.activity = JSON.stringify(temp);
     }
     await fetch("/api/permohonan", {
       method: record ? "PUT" : "POST",
@@ -105,7 +122,19 @@ export default function CreatePermohonanKredit({
           <FormInput
             label="Nama Pemohon"
             value={data.fullname}
-            onChange={(e: string) => setData({ ...data, fullname: e })}
+            onChange={(e: string) => {
+              setData({ ...data, fullname: e });
+              if (record) {
+                const txt = `Edit Nama Pemohon (${record.fullname} to ${e})`;
+                setActivity((prev) => {
+                  prev = prev
+                    ? prev.filter((p) => !p.includes("Edit Nama Pemohon"))
+                    : [];
+                  prev.push(txt);
+                  return prev;
+                });
+              }
+            }}
             align="col"
             width={"48%"}
             required
@@ -113,19 +142,41 @@ export default function CreatePermohonanKredit({
           <FormInput
             label="Nomor NIK"
             value={data.NIK}
-            onChange={(e: string) => setData({ ...data, NIK: e })}
+            onChange={(e: string) => {
+              setData({ ...data, NIK: e });
+              if (record) {
+                const txt = `Edit NIK (${record.NIK} to ${e})`;
+                setActivity((prev) => {
+                  prev = prev
+                    ? prev.filter((p) => !p.includes("Edit NIK"))
+                    : [];
+                  prev.push(txt);
+                  return prev;
+                });
+              }
+            }}
             align="col"
             width={"48%"}
           />
           <FormInput
             label="Nomor Rekening"
             value={data.Document.accountNumber}
-            onChange={(e: string) =>
+            onChange={(e: string) => {
               setData({
                 ...data,
                 Document: { ...data.Document, accountNumber: e },
-              })
-            }
+              });
+              if (record) {
+                const txt = `Edit No Rekening (${record.Document.accountNumber} to ${e})`;
+                setActivity((prev) => {
+                  prev = prev
+                    ? prev.filter((p) => !p.includes("Edit No Rekening"))
+                    : [];
+                  prev.push(txt);
+                  return prev;
+                });
+              }
+            }}
             align="col"
             width={"48%"}
             hide={user && user.role.roleName === "MARKETING" ? true : false}
@@ -138,13 +189,23 @@ export default function CreatePermohonanKredit({
               options={jeniss.map((j) => ({ label: j.name, value: j.id }))}
               value={data.jenisPemohonId || undefined}
               style={{ width: "100%" }}
-              onChange={(e) =>
+              onChange={(e) => {
                 setData({
                   ...data,
                   jenisPemohonId: e,
                   JenisPemohon: jeniss.filter((j) => j.id === e)[0],
-                })
-              }
+                });
+                if (record) {
+                  const txt = `Edit Jenis Pemohon (${record.jenisPemohonId} to ${e})`;
+                  setActivity((prev) => {
+                    prev = prev
+                      ? prev.filter((p) => !p.includes("Edit Jenis Pemohon"))
+                      : [];
+                    prev.push(txt);
+                    return prev;
+                  });
+                }
+              }}
             />
           </div>
           <div style={{ width: "48%" }}>
@@ -156,7 +217,7 @@ export default function CreatePermohonanKredit({
               style={{ width: "100%" }}
               value={data.Document.userId || undefined}
               disabled={user && user.role.roleName === "MARKETING"}
-              onChange={(e) =>
+              onChange={(e) => {
                 setData({
                   ...data,
                   Document: {
@@ -164,8 +225,18 @@ export default function CreatePermohonanKredit({
                     userId: e,
                     User: userss.filter((u) => u.id === e)[0],
                   },
-                })
-              }
+                });
+                if (record) {
+                  const txt = `Edit Marketing (${record.Document.userId} to ${e})`;
+                  setActivity((prev) => {
+                    prev = prev
+                      ? prev.filter((p) => !p.includes("Edit Marketing"))
+                      : [];
+                    prev.push(txt);
+                    return prev;
+                  });
+                }
+              }}
             />
           </div>
           {user && user.role.roleName !== "MARKETING" && (
@@ -192,7 +263,19 @@ export default function CreatePermohonanKredit({
                 type="area"
                 label="Keterangan"
                 value={tempDesc}
-                onChange={(e: string) => setTempDesc(e)}
+                onChange={(e: string) => {
+                  setTempDesc(e);
+                  if (record) {
+                    const txt = `Tambah Keterangan (${e})`;
+                    setActivity((prev) => {
+                      prev = prev
+                        ? prev.filter((p) => !p.includes("Tambah Keterangan"))
+                        : [];
+                      prev.push(txt);
+                      return prev;
+                    });
+                  }
+                }}
                 align="col"
                 width={"48%"}
               />
@@ -216,6 +299,7 @@ export default function CreatePermohonanKredit({
                   },
                 })
               }
+              setActivity={record && setActivity}
             />
             {user && user.role.roleName !== "MARKETING" && (
               <>
@@ -231,6 +315,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
                 <FormUpload
                   label="File MAUK"
@@ -244,6 +329,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
                 <FormUpload
                   label="File Aspek Keuangan"
@@ -257,6 +343,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
                 <FormUpload
                   label="File SLIK"
@@ -270,6 +357,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
                 <FormUpload
                   label="File Jaminan"
@@ -283,6 +371,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
                 <FormUpload
                   label="File Kredit"
@@ -296,6 +385,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
                 <FormUpload
                   label="File Legal"
@@ -309,6 +399,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
                 <FormUpload
                   label="File Custody"
@@ -322,6 +413,7 @@ export default function CreatePermohonanKredit({
                       },
                     })
                   }
+                  setActivity={record && setActivity}
                 />
               </>
             )}
@@ -330,7 +422,10 @@ export default function CreatePermohonanKredit({
             <Button
               loading={loading}
               onClick={() =>
-                window && window.location.replace("/permohonan-kredit")
+                window &&
+                window.location.replace(
+                  record ? "/document" : "/permohonan-kredit"
+                )
               }
               danger
             >
@@ -388,6 +483,7 @@ const defaultPermohonan: IPermohonanKredit = {
     createdAt: new Date(),
     updatedAt: new Date(),
     userId: 0,
+    activity: null,
     User: {
       id: 0,
       fullname: "",

@@ -15,6 +15,7 @@ import {
   FileTextFilled,
   FolderFilled,
   KeyOutlined,
+  LoadingOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
@@ -25,6 +26,7 @@ import {
 } from "@ant-design/icons";
 import { useUser } from "../contexts/UserContext";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 
 export const UserBio = () => {
   const user = useUser();
@@ -274,3 +276,8 @@ export const MenuWindows = () => {
     </div>
   );
 };
+
+export const LoginPage = dynamic(() => import("@/components/utils/LoginPage"), {
+  ssr: false,
+  loading: () => <LoadingOutlined />,
+});
