@@ -106,7 +106,7 @@ model Logs {
   path         String
   serverIP     String
   userAgent    String?
-  sendData     String
+  sendData     String  @db.Text
   returnStatus String
   detail       String? @db.Text
 
