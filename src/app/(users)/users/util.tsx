@@ -434,7 +434,7 @@ const UpsertUser = ({
             required
             type="option"
             options={role.map((r) => ({ label: r.roleName, value: r.id }))}
-            value={tempData.roleId}
+            value={tempData.roleId || undefined}
             onChange={(e: any) =>
               setTempData((prev: User) => ({ ...prev, roleId: e }))
             }

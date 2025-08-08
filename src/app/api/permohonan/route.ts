@@ -78,7 +78,7 @@ export const POST = async (req: NextRequest) => {
       "permohonanKredit",
       JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
-      "Berhasil Menambahkan Permohonan Kredit"
+      "Berhasil Menambahkan Permohonan Kredit " + data.fullname
     );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
@@ -97,7 +97,7 @@ export const PUT = async (req: NextRequest) => {
     ]);
     await logActivity(
       req,
-      `${data.status ? "Update" : "Hapus"}  Permohonan Kredit ${data.fullname}`,
+      `${data.status ? "Update" : "Hapus"}  Permohonan Kredit`,
       data.status ? "PUT" : "DELETE",
       "permohonanKredit",
       JSON.stringify(data),

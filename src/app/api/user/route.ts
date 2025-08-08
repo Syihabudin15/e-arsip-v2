@@ -96,7 +96,7 @@ export const POST = async (req: NextRequest) => {
       "user",
       JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
-      "Berhasil menambahkan user"
+      "Berhasil menambahkan user " + data.fullname
     );
     return NextResponse.json({ status: 201, msg: "OK" }, { status: 201 });
   } catch (err) {
@@ -131,7 +131,7 @@ export const PUT = async (req: NextRequest) => {
     });
     await logActivity(
       req,
-      `${data.status ? "Update" : "Hapus"} User ${find.fullname}`,
+      `${data.status ? "Update" : "Hapus"} User`,
       data.status ? "PUT" : "DELETE",
       "user",
       JSON.stringify(data),

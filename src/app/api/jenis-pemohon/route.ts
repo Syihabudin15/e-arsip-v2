@@ -96,7 +96,7 @@ export const POST = async (req: NextRequest) => {
       "jenisPemohon",
       JSON.stringify(data),
       JSON.stringify({ status: 200, msg: "OK" }),
-      "Berhasil Menambahkan Jenis Pemohon"
+      "Berhasil Menambahkan Jenis Pemohon " + data.name
     );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
@@ -120,7 +120,7 @@ export const PUT = async (req: NextRequest) => {
     await prisma.jenisPemohon.update({ where: { id: id }, data });
     await logActivity(
       req,
-      `${data.status ? "Update" : "Hapus"} Jenis Pemohon ${find.name}`,
+      `${data.status ? "Update" : "Hapus"} Jenis Pemohon`,
       data.status ? "PUT" : "DELETE",
       "jenisPemohon",
       JSON.stringify(data),

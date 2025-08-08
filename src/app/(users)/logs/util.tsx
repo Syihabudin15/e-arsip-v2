@@ -109,7 +109,7 @@ export default function TableLogs() {
       title: "METHOD",
       dataIndex: "method",
       key: "method",
-      className: "method",
+      className: "text-xs",
       width: 100,
       filterDropdown: () => (
         <Select
@@ -139,7 +139,7 @@ export default function TableLogs() {
       title: "REQUEST PATH",
       dataIndex: "path",
       key: "path",
-      className: "method",
+      className: "text-xs",
       width: 150,
       onHeaderCell: () => {
         return {
@@ -157,8 +157,8 @@ export default function TableLogs() {
       title: "NAMA TABLE",
       dataIndex: "table",
       key: "table",
-      className: "method",
-      width: 100,
+      className: "text-xs",
+      width: 150,
       filterDropdown: () => (
         <Select
           options={[
@@ -189,7 +189,7 @@ export default function TableLogs() {
       title: "SERVER IP",
       dataIndex: "serverIP",
       key: "serverIP",
-      className: "method",
+      className: "text-xs",
       width: 150,
       onHeaderCell: () => {
         return {
@@ -207,7 +207,7 @@ export default function TableLogs() {
       title: "USER AGENT",
       dataIndex: "userAgent",
       key: "userAgent",
-      className: "method",
+      className: "text-xs",
       width: 200,
       onHeaderCell: () => {
         return {

@@ -58,7 +58,8 @@ export const POST = async (req: NextRequest) => {
         "role",
         JSON.stringify(data),
         JSON.stringify({ status: 400, msg: "Bad Request" }),
-        "Gagal Menambahkan Role karena nama role sudah tersedia"
+        "Gagal Menambahkan Role karena nama role sudah tersedia " +
+          data.roleName
       );
       return NextResponse.json(
         { data: null, status: 400, msg: "Nama Role sudah tersedia!" },
@@ -75,7 +76,7 @@ export const POST = async (req: NextRequest) => {
       "role",
       JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
-      "Berhasil Menambahkan Role"
+      "Berhasil Menambahkan Role " + data.roleName
     );
     return NextResponse.json({ data, status: 201, msg: "OK" }, { status: 201 });
   } catch (err) {
@@ -94,14 +95,14 @@ export const PUT = async (req: NextRequest) => {
     if (!find) {
       await logActivity(
         req,
-        `Gagal ${data.status ? "Update" : "Hapus"} Role ${data.roleName}`,
+        `Gagal ${data.status ? "Update" : "Hapus"} Role`,
         data.status ? "PUT" : "DELETE",
         "role",
         JSON.stringify(data),
         JSON.stringify({ status: 404, msg: "Not Found" }),
         `Gagal ${
           data.status ? "Update" : "Hapus"
-        } Role karena data tidak ditemukan`
+        } Role karena data tidak ditemukan ${data.roleName}`
       );
       return NextResponse.json(
         { data: null, status: 404, msg: "Data role tidak ditemukan!" },
@@ -114,7 +115,7 @@ export const PUT = async (req: NextRequest) => {
     });
     await logActivity(
       req,
-      `${data.status ? "Update" : "Hapus"} Role ${find.roleName}`,
+      `${data.status ? "Update" : "Hapus"} Role`,
       data.status ? "PUT" : "DELETE",
       "role",
       JSON.stringify(data),
