@@ -1,5 +1,6 @@
 "use client";
 
+import { IPermission } from "@/components/IInterfaces";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   DeleteOutlined,
@@ -7,9 +8,10 @@ import {
   PlusCircleOutlined,
 } from "@ant-design/icons";
 import { Role } from "@prisma/client";
-import { App, Button, Input, Modal, Table, TableProps, Tooltip } from "antd";
+import { App, Button, Input, Modal, Table, TableProps, Typography } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
+const { Paragraph } = Typography;
 
 export default function TableRole() {
   const [page, setPage] = useState(1);
@@ -91,7 +93,7 @@ export default function TableRole() {
       dataIndex: "permission",
       key: "permission",
       className: "text-xs",
-      width: 100,
+      width: 250,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -101,11 +103,22 @@ export default function TableRole() {
         };
       },
       render(value, record, index) {
-        const displayText =
-          value.length > 40 ? value.slice(0, 40) + "..." : value;
+        const displayText = JSON.parse(record.permission) as IPermission[];
         return (
           <>
-            <Tooltip title={value}>{displayText}</Tooltip>
+            <Paragraph
+              ellipsis={{
+                rows: 1,
+                expandable: "collapsible",
+              }}
+              style={{ fontSize: 11 }}
+            >
+              {displayText.map((p) => (
+                <>
+                  {p.path}: [{p.access.join(",")}]<br />
+                </>
+              ))}
+            </Paragraph>
           </>
         );
       },

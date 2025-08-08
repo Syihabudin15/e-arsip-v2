@@ -368,10 +368,10 @@ export default function TableDokumen() {
           <>
             <Paragraph
               ellipsis={{
-                rows: 1,
+                rows: 2,
                 expandable: "collapsible",
               }}
-              style={{ fontSize: 12 }}
+              style={{ fontSize: 11 }}
             >
               {parse.map((p) => (
                 <>
