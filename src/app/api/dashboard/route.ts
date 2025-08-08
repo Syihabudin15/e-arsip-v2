@@ -50,7 +50,7 @@ export async function GET() {
   const lastPermohonan = await prisma.permohonanKredit.findMany({
     orderBy: { createdAt: "desc" },
     take: 5,
-    include: { JenisPemohon: true },
+    include: { JenisPemohon: true, Document: { include: { User: true } } },
   });
 
   const lastLogs = await prisma.logs.findMany({

@@ -27,6 +27,7 @@ import {
 import { useUser } from "../contexts/UserContext";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { IPermission } from "../IInterfaces";
 
 export const UserBio = () => {
   const user = useUser();
@@ -40,9 +41,9 @@ export const UserBio = () => {
       placement: "bottomRight",
     });
   };
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setLoading(true);
-    fetch("/api/auth", { method: "DELETE" })
+    await fetch("/api/auth", { method: "DELETE" })
       .then((res) => res.json())
       .then((res) => {
         if (res.status !== 200) {
@@ -176,9 +177,9 @@ export const MenuMobile = () => {
       placement: "bottomRight",
     });
   };
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setLoading(true);
-    fetch("/api/auth", { method: "DELETE" })
+    await fetch("/api/auth", { method: "DELETE" })
       .then((res) => res.json())
       .then((res) => {
         if (res.status !== 200) {
@@ -229,7 +230,19 @@ export const MenuMobile = () => {
           </div>
           <div>
             <Menu
-              items={menuItems}
+              items={(() => {
+                if (user) {
+                  const userMenu = JSON.parse(
+                    user.role.permission
+                  ) as IPermission[];
+                  const fix = menuItems.filter((menu) =>
+                    userMenu.some((um) => um.path === menu.key)
+                  );
+                  return fix;
+                } else {
+                  return [];
+                }
+              })()}
               onClick={(e) => window && window.location.replace(e.key)}
             />
           </div>
@@ -252,6 +265,7 @@ export const MenuMobile = () => {
 };
 export const MenuWindows = () => {
   const [collapse, setCollapse] = useState(false);
+  const user = useUser();
   return (
     <div className="hidden sm:block h-[92vh] bg-blue-500">
       <Layout>
@@ -264,7 +278,19 @@ export const MenuWindows = () => {
         </Button>
         <Menu
           mode="inline"
-          items={menuItems}
+          items={(() => {
+            if (user) {
+              const userMenu = JSON.parse(
+                user.role.permission
+              ) as IPermission[];
+              const fix = menuItems.filter((menu) =>
+                userMenu.some((um) => um.path === menu.key)
+              );
+              return fix;
+            } else {
+              return [];
+            }
+          })()}
           style={{
             background: "linear-gradient(to bottom right, #3B82F6, #A855F7)",
           }}

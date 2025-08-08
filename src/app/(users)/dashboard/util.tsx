@@ -29,6 +29,21 @@ export default function DashboardMaster() {
 
   const columnsPermohonan = [
     {
+      title: "MARKETING",
+      dataIndex: ["Document", "User", ["fullname"]],
+      key: "marketingName",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center" as React.CSSProperties["textAlign"],
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
       title: "NAMA LENGKAP",
       dataIndex: "fullname",
       key: "fullname",
@@ -202,7 +217,7 @@ export default function DashboardMaster() {
         </Col>
         <Col span={6} xs={12} md={8} lg={6}>
           <Card
-            title="Total Dokumen"
+            title="Total Permohnan"
             styles={{
               header: {
                 background: "linear-gradient(135deg, #3b82f6, #9333ea)",
@@ -216,7 +231,7 @@ export default function DashboardMaster() {
         </Col>
         <Col span={6} xs={12} md={8} lg={6}>
           <Card
-            title="Pengajuan Hari Ini"
+            title="Permohonan Hari Ini"
             styles={{
               header: {
                 background: "linear-gradient(135deg, #3b82f6, #9333ea)",

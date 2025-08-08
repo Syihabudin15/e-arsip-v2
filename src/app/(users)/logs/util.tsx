@@ -357,7 +357,7 @@ export default function TableLogs() {
       dataIndex: "createdAt",
       key: "createdAt",
       className: "text-xs text-center",
-      width: 100,
+      width: 150,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -367,7 +367,7 @@ export default function TableLogs() {
         };
       },
       render(value, record, index) {
-        return <>{moment(record.createdAt).format("DD/MM/YYYY")}</>;
+        return <>{moment(record.createdAt).format("DD/MM/YYYY HH:mm")}</>;
       },
     },
   ];
