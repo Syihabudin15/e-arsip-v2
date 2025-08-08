@@ -42,13 +42,14 @@ export default function LoginPage() {
       className="flex justify-center sm:justify-end items-center w-full h-[92vh] bg-gradient-to-br from-blue-500 to-red-400"
       style={{
         // backgroundImage: "url(/login-bg3.png)",
-        backgroundImage: "url(/3.jpg)",
-        // ...(window &&
-        //   window.innerWidth > 600 && {
-        //     backgroundSize: 900,
-        //   }),
-        // backgroundPosition: "center",
-        backgroundSize: "cover",
+        backgroundImage: "url(/2.jpg)",
+        ...(window && window.innerWidth > 600
+          ? {
+              backgroundSize: 990,
+            }
+          : {
+              backgroundSize: "cover",
+            }),
       }}
     >
       <div className="h-full w-full hidden sm:flex justify-center items-center">
