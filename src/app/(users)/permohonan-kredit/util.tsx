@@ -17,7 +17,7 @@ import moment from "moment";
 import { useEffect, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import { useAccess } from "@/components/utils/PermissionUtil";
-import { MyPDFViewer } from "@/components/utils/PDFUtils";
+import { MyPDFViewer } from "@/components/utils/LayoutUtil";
 
 export default function TablePermohonanKredit() {
   const [page, setPage] = useState(1);
