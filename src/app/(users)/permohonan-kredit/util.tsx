@@ -17,6 +17,7 @@ import moment from "moment";
 import { useEffect, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import { useAccess } from "@/components/utils/PermissionUtil";
+import { MyPDFViewer } from "@/components/utils/PDFUtils";
 
 export default function TablePermohonanKredit() {
   const [page, setPage] = useState(1);
@@ -362,7 +363,7 @@ export const DetailPermohonan = ({ data }: { data: IPermohonanKredit }) => {
         style={{ top: 20 }}
       >
         <div className="flex flex-wrap gap-2 h-[80vh] overflow-y-scroll">
-          <div className="w-full sm:flex-1">
+          <div className="w-full sm:flex-1 h-full overflow-auto">
             <DataPemohon data={data} />
           </div>
           <div className="w-full sm:flex-1/4 sm:border-l rounded">
@@ -661,7 +662,9 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
 };
 
 const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
+  const { access, hasAccess } = useAccess("/permohonan-kredit");
   const [allFile, setAllFile] = useState<string>();
+
   useEffect(() => {
     (async () => {
       const result = await mergePDF(files.map((f) => f.file));
@@ -683,11 +686,9 @@ const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
               <>
                 {allFile && (
                   <div className="h-[70vh]">
-                    <iframe
-                      src={allFile}
-                      width="100%"
-                      height={"100%"}
-                      style={{ border: "none" }}
+                    <MyPDFViewer
+                      fileUrl={allFile}
+                      download={hasAccess("download") ? true : false}
                     />
                   </div>
                 )}
@@ -700,11 +701,9 @@ const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
               key: f.name + Date.now(),
               children: (
                 <div className="h-[70vh]">
-                  <iframe
-                    src={f.file}
-                    width="100%"
-                    height={"100%"}
-                    style={{ border: "none" }}
+                  <MyPDFViewer
+                    fileUrl={f.file}
+                    download={hasAccess("download") ? true : false}
                   />
                 </div>
               ),
@@ -737,7 +736,9 @@ export const mergePDF = async (links: any[]) => {
   }
 
   const mergedBytes = await mergedPdf.save();
-  const blob = new Blob([mergedBytes], { type: "application/pdf" });
+  const blob = new Blob([mergedBytes.buffer as ArrayBuffer], {
+    type: "application/pdf",
+  });
   const mergedUrl = URL.createObjectURL(blob);
   return mergedUrl;
 };

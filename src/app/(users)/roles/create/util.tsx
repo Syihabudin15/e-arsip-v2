@@ -132,7 +132,14 @@ export default function UpsertRole({ record }: { record?: Role }) {
         return (
           <>
             <Checkbox.Group
-              options={["read", "write", "update", "delete", "detail"]}
+              options={[
+                "read",
+                "write",
+                "update",
+                "delete",
+                "detail",
+                "download",
+              ]}
               value={record.access}
               onChange={(e) => {
                 setMenus((prev: IMenu[]) => {

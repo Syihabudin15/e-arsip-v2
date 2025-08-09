@@ -307,3 +307,11 @@ export const LoginPage = dynamic(() => import("@/components/utils/LoginPage"), {
   ssr: false,
   loading: () => <LoadingOutlined />,
 });
+
+export const MyPDFViewer = dynamic(
+  () => import("@/components/utils/PDFUtils").then((d) => d.MyPDFViewer),
+  {
+    ssr: false,
+    loading: () => <LoadingOutlined />,
+  }
+);
