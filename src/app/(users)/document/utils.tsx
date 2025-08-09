@@ -6,14 +6,25 @@ import {
   IPermohonanKredit,
 } from "@/components/IInterfaces";
 import { FilterOption } from "@/components/utils/FormUtils";
-import { FormOutlined } from "@ant-design/icons";
+import { FormOutlined, LoadingOutlined } from "@ant-design/icons";
 import { JenisPemohon } from "@prisma/client";
 import { Button, Input, Table, TableProps, Typography } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
-import { DetailPermohonan } from "../permohonan-kredit";
+// import { DetailPermohonan } from "../permohonan-kredit";
+
 import { useAccess } from "@/components/utils/PermissionUtil";
+import dynamic from "next/dynamic";
 const { Paragraph } = Typography;
+
+const DetailPermohonan = dynamic(
+  () =>
+    import("@/app/(users)/permohonan-kredit").then((d) => d.DetailPermohonan),
+  {
+    ssr: false,
+    loading: () => <LoadingOutlined />,
+  }
+);
 
 export default function TableDokumen() {
   const [page, setPage] = useState(1);

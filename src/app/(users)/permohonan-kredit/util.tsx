@@ -9,6 +9,7 @@ import { FilterOption, FormInput } from "@/components/utils/FormUtils";
 import {
   DeleteOutlined,
   FolderOutlined,
+  LoadingOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
 import { JenisPemohon } from "@prisma/client";
@@ -17,7 +18,15 @@ import moment from "moment";
 import { useEffect, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import { useAccess } from "@/components/utils/PermissionUtil";
-import { MyPDFViewer } from "@/components/utils/LayoutUtil";
+import dynamic from "next/dynamic";
+// import { MyPDFViewer } from "@/components/utils/LayoutUtil";
+const MyPDFViewer = dynamic(
+  () => import("@/components/utils/LayoutUtil").then((d) => d.MyPDFViewer),
+  {
+    ssr: false,
+    loading: () => <LoadingOutlined />,
+  }
+);
 
 export default function TablePermohonanKredit() {
   const [page, setPage] = useState(1);
