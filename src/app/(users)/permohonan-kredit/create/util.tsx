@@ -44,21 +44,23 @@ export default function CreatePermohonanKredit({
           }
         });
     })();
-    setData({
-      ...data,
-      Document: {
-        ...data.Document,
-        userId:
-          user && user.role.roleName === "MARKETING"
-            ? user.id
-            : data.Document.userId,
-        User: user ? user : data.Document.User,
-      },
-    });
     setActivity([]);
     setTempDesc(undefined);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!record && user) {
+      setData({
+        ...data,
+        Document: {
+          ...data.Document,
+          userId: user.id,
+          User: user,
+        },
+      });
+    }
+  }, [user]);
 
   const handleSubmit = async () => {
     if (!data.JenisPemohon.name || !data.Document.User.fullname)

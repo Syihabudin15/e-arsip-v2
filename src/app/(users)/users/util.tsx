@@ -331,7 +331,9 @@ const UpsertUser = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [tempData, setTempData] = useState<User>(data || defaultUser);
+  const [tempData, setTempData] = useState<User>(
+    data ? { ...data, password: "" } : defaultUser
+  );
   const { modal } = App.useApp();
 
   const handleSubmit = async () => {
@@ -418,17 +420,15 @@ const UpsertUser = ({
               setTempData((prev: User) => ({ ...prev, email: e }))
             }
           />
-          {!data && (
-            <FormInput
-              label="Password"
-              required
-              type="password"
-              value={tempData.password}
-              onChange={(e: string) =>
-                setTempData((prev: User) => ({ ...prev, password: e }))
-              }
-            />
-          )}
+          <FormInput
+            label="Password"
+            required={data ? false : true}
+            type="password"
+            value={tempData.password}
+            onChange={(e: string) =>
+              setTempData((prev: User) => ({ ...prev, password: e }))
+            }
+          />
           <FormInput
             label="Role"
             required

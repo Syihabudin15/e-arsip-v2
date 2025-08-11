@@ -125,6 +125,10 @@ export const PUT = async (req: NextRequest) => {
         { status: 404 }
       );
     }
+    if (data.password !== find.password) {
+      const has = await bcript.hash(data.password, 10);
+      data.password = has;
+    }
     await prisma.user.update({
       where: { id: id },
       data: { ...data, updatedAt: new Date() },
