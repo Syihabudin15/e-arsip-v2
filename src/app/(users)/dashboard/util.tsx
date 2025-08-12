@@ -24,10 +24,10 @@ export default function DashboardMaster() {
 
   const { cards, charts, tables } = data;
 
-  const logData = charts.logsPerDay.map((l: any) => ({
-    date: new Date(l.createdAt).toLocaleDateString(),
-    count: l._count,
-  }));
+  // const logData = charts.logsPerDay.map((l: any) => ({
+  //   date: l.createdAt,
+  //   count: l._count,
+  // }));
 
   // const pengajuanData = charts.pengajuanPerBulan.map((p: any) => ({
   //   date: new Date(p.createdAt).toLocaleDateString(),
@@ -264,7 +264,7 @@ export default function DashboardMaster() {
               },
             }}
           >
-            <Line data={logData} xField="date" yField="count" />
+            <Line data={charts.logsPerDay} xField="createdAt" yField="_count" />
           </Card>
         </Col>
         <Col span={12} xs={24} lg={12}>

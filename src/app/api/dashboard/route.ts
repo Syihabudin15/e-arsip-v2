@@ -50,16 +50,14 @@ export async function GET() {
   const groupedLogs = [];
   const groupedPengajuan = [];
 
-  for (let tm = 7; tm > 0; tm--) {
+  for (let tm = 6; tm >= 0; tm--) {
     const filtered = logsPerDay.filter(
       (f) =>
         moment(f.createdAt).format("DD/MM/YYYY") ===
-        moment(new Date(new Date().setDate(new Date().getDate() - tm))).format(
-          "DD/MM/YYYY"
-        )
+        moment().add(-tm, "day").format("DD/MM/YYYY")
     );
     groupedLogs.push({
-      createdAt: new Date(new Date().setDate(new Date().getDate() - tm)),
+      createdAt: moment().add(-tm, "day").format("DD/MM/YY"),
       _count: filtered.length,
     });
   }
@@ -68,13 +66,14 @@ export async function GET() {
       (f) =>
         moment(f.createdAt).format("MM/YYYY") ===
         moment()
-          .set("month", moment().get("month") - tm)
+          .add(-tm, "month")
+          // .set("month", moment().get("month") - tm)
           .format("MM/YYYY")
     );
     groupedPengajuan.push({
       createdAt: moment()
         .set("month", moment().get("month") - tm)
-        .format("MM/YYYY"),
+        .format("MM/YY"),
       _count: filtered.length,
     });
   }
