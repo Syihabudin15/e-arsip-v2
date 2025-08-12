@@ -184,11 +184,11 @@ const FormUploadListFile = ({
             onClick={() => {
               handleDeleteFiles(f.file);
               if (setActivity) {
-                const txt = `Hapus File ${label} (${f.name})`;
+                const txt = `Hapus ${label} (${f.name})`;
                 setActivity((prev: string[]) => {
                   prev = prev
                     ? prev.filter(
-                        (p) => !p.includes(`Hapus File ${label} (${f.name})`)
+                        (p) => !p.includes(`Hapus ${label} (${f.name})`)
                       )
                     : [];
                   prev.push(txt);
@@ -227,11 +227,11 @@ const FormUploadInputFile = ({
       .then(() => {
         setCurrFiles({ ...currFiles, file: "" });
         if (setActivity) {
-          const txt = `Hapus File ${label} (${currFiles.name})`;
+          const txt = `Hapus ${label} (${currFiles.name})`;
           setActivity((prev: string[]) => {
             prev = prev
               ? prev.filter(
-                  (p) => !p.includes(`Hapus File ${label} (${currFiles.name})`)
+                  (p) => !p.includes(`Hapus ${label} (${currFiles.name})`)
                 )
               : [];
             prev.push(txt);

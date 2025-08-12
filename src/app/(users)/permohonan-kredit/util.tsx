@@ -166,6 +166,21 @@ export default function TablePermohonanKredit() {
       },
     },
     {
+      title: "TUJUAN PENGGUNAAN",
+      dataIndex: "purposeUse",
+      key: "purposeUse",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
       title: "CREATED AT",
       dataIndex: "createdAt",
       key: "createdAt",
@@ -623,6 +638,16 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
           <Input
             disabled
             value={data.JenisPemohon.name}
+            style={{ color: "GrayText" }}
+          />
+        </div>
+      </div>
+      <div className="flex flex-row items-center justify-between gap-2">
+        <div>Tujuan Penggunaan</div>
+        <div>
+          <Input
+            disabled
+            value={data.purposeUse || ""}
             style={{ color: "GrayText" }}
           />
         </div>

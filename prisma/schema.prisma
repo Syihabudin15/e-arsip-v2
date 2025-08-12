@@ -55,9 +55,10 @@ model JenisPemohon {
 }
 
 model PermohonanKredit {
-  id       Int     @id @default(autoincrement())
-  fullname String
-  NIK      String?
+  id         Int     @id @default(autoincrement())
+  fullname   String
+  NIK        String?
+  purposeUse String?
 
   status         Boolean      @default(true)
   createdAt      DateTime     @default(now())

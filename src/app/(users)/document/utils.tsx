@@ -183,6 +183,21 @@ export default function TableDokumen() {
       },
     },
     {
+      title: "TUJUAN PENGGUNAAN",
+      dataIndex: "purposeUse",
+      key: "purposeUse",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
       title: "FILE IDENTITAS",
       dataIndex: "fileIdentitas",
       key: "fileIdentitas",
