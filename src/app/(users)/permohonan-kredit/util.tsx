@@ -711,7 +711,9 @@ const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
       <Tabs
         size="small"
         type="card"
-        tabBarStyle={{ width: 80 }}
+        tabBarStyle={{
+          ...(window && window.innerWidth > 600 && { width: 80 }),
+        }}
         items={[
           {
             label: `Semua`,

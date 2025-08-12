@@ -1,4 +1,5 @@
 import prisma from "@/components/Prisma";
+import moment from "moment";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -46,6 +47,36 @@ export async function GET() {
     }),
   ]);
 
+  const groupedLogs = [];
+  const groupedPengajuan = [];
+
+  for (let tm = 7; tm > 0; tm--) {
+    const filtered = logsPerDay.filter(
+      (f) =>
+        moment(f.createdAt).format("DD/MM/YYYY") ===
+        moment(new Date(new Date().setDate(new Date().getDate() - tm))).format(
+          "DD/MM/YYYY"
+        )
+    );
+    groupedLogs.push({
+      createdAt: new Date(new Date().setDate(new Date().getDate() - tm)),
+      _count: filtered.length,
+    });
+  }
+  for (let tm = 6; tm > 0; tm--) {
+    const filtered = pengajuanPerBulan.filter(
+      (f) =>
+        moment(f.createdAt).format("DD/MM/YYYY") ===
+        moment(new Date(new Date().setDate(new Date().getMonth() - tm))).format(
+          "DD/MM/YYYY"
+        )
+    );
+    groupedPengajuan.push({
+      createdAt: new Date(new Date().setDate(new Date().getDate() - tm)),
+      _count: filtered.length,
+    });
+  }
+
   // Data tabel terbaru
   const lastPermohonan = await prisma.permohonanKredit.findMany({
     orderBy: { createdAt: "desc" },
@@ -61,7 +92,11 @@ export async function GET() {
 
   return NextResponse.json({
     cards: { totalUsers, totalRoles, totalDocuments, totalPermohonanHariIni },
-    charts: { logsPerDay, pengajuanPerBulan, topUsers },
+    charts: {
+      logsPerDay: groupedLogs,
+      pengajuanPerBulan: groupedPengajuan,
+      topUsers,
+    },
     tables: { lastPermohonan, lastLogs },
   });
 }

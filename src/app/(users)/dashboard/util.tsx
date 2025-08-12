@@ -303,7 +303,7 @@ export default function DashboardMaster() {
         </Col>
         <Col span={12} xs={24}>
           <Card
-            title="Aktivitas User Terakhir"
+            title="Aktivitas User Terbaru"
             styles={{
               header: {
                 background: "linear-gradient(135deg, #3b82f6, #9333ea)",
