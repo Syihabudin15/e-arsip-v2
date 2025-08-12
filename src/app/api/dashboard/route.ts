@@ -63,16 +63,18 @@ export async function GET() {
       _count: filtered.length,
     });
   }
-  for (let tm = 6; tm > 0; tm--) {
+  for (let tm = 5; tm >= 0; tm--) {
     const filtered = pengajuanPerBulan.filter(
       (f) =>
-        moment(f.createdAt).format("DD/MM/YYYY") ===
-        moment(new Date(new Date().setDate(new Date().getMonth() - tm))).format(
-          "DD/MM/YYYY"
-        )
+        moment(f.createdAt).format("MM/YYYY") ===
+        moment()
+          .set("month", moment().get("month") - tm)
+          .format("MM/YYYY")
     );
     groupedPengajuan.push({
-      createdAt: new Date(new Date().setDate(new Date().getDate() - tm)),
+      createdAt: moment()
+        .set("month", moment().get("month") - tm)
+        .format("MM/YYYY"),
       _count: filtered.length,
     });
   }

@@ -1,8 +1,9 @@
 "use client";
 import { Card, Col, Row, Table, Typography } from "antd";
 import { useEffect, useState } from "react";
-import { Line } from "@ant-design/plots";
+import { Column, ColumnConfig, Line } from "@ant-design/plots";
 import moment from "moment";
+import { LoadingOutlined } from "@ant-design/icons";
 const { Paragraph } = Typography;
 export default function DashboardMaster() {
   const [data, setData] = useState<any>();
@@ -13,7 +14,13 @@ export default function DashboardMaster() {
       .then((res) => setData(res));
   }, []);
 
-  if (!data) return <div>Loading...</div>;
+  if (!data)
+    return (
+      <div>
+        Loading...
+        <LoadingOutlined />
+      </div>
+    );
 
   const { cards, charts, tables } = data;
 
@@ -22,10 +29,10 @@ export default function DashboardMaster() {
     count: l._count,
   }));
 
-  const pengajuanData = charts.pengajuanPerBulan.map((p: any) => ({
-    date: new Date(p.createdAt).toLocaleDateString(),
-    count: p._count,
-  }));
+  // const pengajuanData = charts.pengajuanPerBulan.map((p: any) => ({
+  //   date: new Date(p.createdAt).toLocaleDateString(),
+  //   count: p._count,
+  // }));
 
   const columnsPermohonan = [
     {
@@ -271,7 +278,11 @@ export default function DashboardMaster() {
               },
             }}
           >
-            <Line data={pengajuanData} xField="date" yField="count" />
+            <Column
+              data={charts.pengajuanPerBulan}
+              xField={"createdAt"}
+              yField={"_count"}
+            />
           </Card>
         </Col>
       </Row>
