@@ -54,7 +54,8 @@ export async function refreshToken(request: NextRequest) {
     return NextResponse.redirect(new URL("/unauthorize", request.url));
 
   const parsed = await decrypt(session);
-  parsed.expires = new Date(Date.now() + 3600 * 1000 * 5);
+  // parsed.expires = new Date(Date.now() + 3600 * 1000 * 5); // Versi Perjam (5 Jam)
+  parsed.expires = new Date(Date.now() + 5 * 60 * 1000); // Versi Permenit (5 Menit)
 
   let res: NextResponse;
   // Jika di halaman root "/" dan ada session → redirect ke /dashboard
