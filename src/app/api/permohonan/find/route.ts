@@ -1,4 +1,5 @@
 import prisma from "@/components/Prisma";
+import { StatusAction } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -12,8 +13,11 @@ export const GET = async (req: NextRequest) => {
     const data = await prisma.permohonanKredit.findFirst({
       where: { id: parseInt(id) },
       include: {
+        User: true,
         Document: {
-          include: { User: true },
+          include: {
+            PermohonanAction: { where: { statusAction: StatusAction.PENDING } },
+          },
         },
         JenisPemohon: true,
       },

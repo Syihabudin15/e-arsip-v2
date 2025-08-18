@@ -14,5 +14,8 @@ export const config = {
     "/permohonan-kredit",
     "/document",
     "/logs",
+    "/request/:path*",
+    // "/api/permohnan-kredit/:path*",
+    // "/api/request",
   ],
 };

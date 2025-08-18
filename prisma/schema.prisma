@@ -13,6 +13,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum StatusAction {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Role {
   id         Int    @id @default(autoincrement())
   roleName   String @unique
@@ -32,13 +38,15 @@ model User {
   email    String
   photo    String?
 
-  status    Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
-  role      Role       @relation(fields: [roleId], references: [id])
-  roleId    Int
-  Document  Document[]
-  Logs      Logs[]
+  status           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now())
+  role             Role               @relation(fields: [roleId], references: [id])
+  roleId           Int
+  Logs             Logs[]
+  PermohonanKredit PermohonanKredit[]
+  ReuestMade       PermohonanAction[] @relation("RequesterRelation")
+  ApprovMade       PermohonanAction[] @relation("ApproverRelation")
 
   @@index([roleId])
 }
@@ -55,48 +63,61 @@ model JenisPemohon {
 }
 
 model PermohonanKredit {
-  id         Int     @id @default(autoincrement())
-  fullname   String
-  NIK        String?
-  purposeUse String?
+  id            Int     @id @default(autoincrement())
+  fullname      String
+  NIK           String?
+  purposeUse    String?
+  accountNumber String?
+  description   String? @db.Text
+  activity      String? @db.Text
 
   status         Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now())
   JenisPemohon   JenisPemohon @relation(fields: [jenisPemohonId], references: [id])
   jenisPemohonId Int
+  User           User         @relation(fields: [userId], references: [id])
+  userId         Int
   Document       Document     @relation(fields: [documentId], references: [id])
   documentId     Int
 
   @@index([jenisPemohonId])
-  @@index([documentId])
   @@index([createdAt])
+  @@index([userId])
 }
 
 model Document {
-  id                 Int     @id @default(autoincrement())
-  fullname           String?
-  accountNumber      String?
-  description        String? @db.Text
-  fileIdentitas      String? @db.Text
-  fileSLIK           String? @db.Text
-  fileJaminan        String? @db.Text
-  fileKredit         String? @db.Text
-  fileAspekKKeuangan String? @db.Text
-  fileMAUK           String? @db.Text
-  fileKepatuhan      String? @db.Text
-  fileLegal          String? @db.Text
-  fileCustody        String? @db.Text
-  activity           String? @db.Text
+  id                 Int                @id @default(autoincrement())
+  fileIdentitas      String?            @db.Text
+  fileSLIK           String?            @db.Text
+  fileJaminan        String?            @db.Text
+  fileKredit         String?            @db.Text
+  fileAspekKKeuangan String?            @db.Text
+  fileMAUK           String?            @db.Text
+  fileKepatuhan      String?            @db.Text
+  fileLegal          String?            @db.Text
+  fileCustody        String?            @db.Text
+  PermohonanAction   PermohonanAction[]
+  PermohonanKredit   PermohonanKredit[]
+}
 
-  status           Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @default(now())
-  userId           Int
-  User             User               @relation(fields: [userId], references: [id])
-  PermohonanKredit PermohonanKredit[]
+model PermohonanAction {
+  id           Int          @id @default(autoincrement())
+  rootFilename String
+  files        String       @db.Text
+  statusAction StatusAction @default(PENDING)
+  description  String?      @db.Text
+  action       String
 
-  @@index([userId])
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+  Requester   User     @relation("RequesterRelation", fields: [requesterId], references: [id])
+  requesterId Int
+  Approver    User?    @relation("ApproverRelation", fields: [approverId], references: [id])
+  approverId  Int?
+  Document    Document @relation(fields: [documentId], references: [id])
+  documentId  Int
 }
 
 model Logs {

@@ -1,7 +1,9 @@
 "use client";
 
+import { IExcelColumn, IExcelData } from "@/components/IInterfaces";
+import { ExportOutlined } from "@ant-design/icons";
 import { Logs, Role, User } from "@prisma/client";
-import { Input, Select, Table, TableProps, Typography } from "antd";
+import { Button, Input, Select, Table, TableProps, Typography } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 const { Paragraph } = Typography;
@@ -380,7 +382,37 @@ export default function TableLogs() {
             <h1 className="font-bold text-xl">User Activities</h1>
           </div>
           <div className="flex my-2 gap-2 justify-between">
-            <div className="flex gap-2"></div>
+            <div className="flex gap-2">
+              <ExportData
+                filename="LogAktivitas"
+                columns={[
+                  { header: "NO", key: "no", width: 6 },
+                  { header: "AKTIVITAS", key: "name", width: 30 },
+                  { header: "METHOD", key: "method", width: 12 },
+                  { header: "REQUEST PATH", key: "requestPath", width: 30 },
+                  { header: "NAMA TABEL", key: "table", width: 30 },
+                  { header: "IP ADDRESS", key: "ip", width: 30 },
+                  { header: "USER AGENT", key: "agent", width: 30 },
+                  { header: "POST DATA", key: "postData", width: 50 },
+                  { header: "RETURN STATUS", key: "return", width: 50 },
+                  { header: "USER", key: "user", width: 30 },
+                  { header: "CREATED_AT", key: "createdAt", width: 20 },
+                ]}
+                rows={data.map((d, i) => ({
+                  no: i + 1,
+                  name: d.name,
+                  method: d.method,
+                  requestPath: d.path,
+                  table: d.table,
+                  ip: d.serverIP,
+                  agent: d.userAgent,
+                  postData: d.sendData,
+                  return: d.returnStatus,
+                  user: d.User.fullname,
+                  createdAt: moment(d.createdAt).format("DD/MM/YYYY"),
+                }))}
+              />
+            </div>
             <div className="w-42">
               <Input.Search
                 size="small"
@@ -409,3 +441,45 @@ export default function TableLogs() {
     />
   );
 }
+
+export const ExportData = ({
+  textDisplay,
+  filename,
+  columns,
+  rows,
+}: {
+  textDisplay?: boolean;
+  filename: string;
+  columns: IExcelColumn[];
+  rows: IExcelData[];
+}) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleDownload = async () => {
+    setLoading(true);
+    const res = await fetch("/api/export", {
+      method: "POST",
+      body: JSON.stringify({ filename, columns, rows }),
+    });
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.xlsx";
+    a.click();
+    setLoading(false);
+  };
+
+  return (
+    <Button
+      onClick={handleDownload}
+      loading={loading}
+      icon={<ExportOutlined />}
+      size="small"
+      type="primary"
+    >
+      {textDisplay && "Export"}
+    </Button>
+  );
+};

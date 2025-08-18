@@ -11,7 +11,9 @@ import {
   Space,
 } from "antd";
 import {
+  CloudDownloadOutlined,
   DashboardFilled,
+  DeleteColumnOutlined,
   FileTextFilled,
   FolderFilled,
   KeyOutlined,
@@ -146,6 +148,16 @@ export const menuItems = [
     label: "Dokumen",
     icon: <FolderFilled />,
     key: "/document",
+  },
+  {
+    label: "P. Hapus File",
+    icon: <DeleteColumnOutlined />,
+    key: "/request/delete",
+  },
+  {
+    label: "P. Download File",
+    icon: <CloudDownloadOutlined />,
+    key: "/request/downloads",
   },
   {
     label: "User Management",

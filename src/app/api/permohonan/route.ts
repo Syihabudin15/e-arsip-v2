@@ -1,6 +1,8 @@
+import { sendEmail } from "@/components/IEmail";
 import { IPermohonanKredit } from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
 import { logActivity } from "@/components/utils/Auth";
+import { StatusAction } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -29,7 +31,12 @@ export const GET = async (req: NextRequest) => {
       },
       include: {
         JenisPemohon: true,
-        Document: { include: { User: true } },
+        Document: {
+          include: {
+            PermohonanAction: { where: { statusAction: StatusAction.PENDING } },
+          },
+        },
+        User: true,
       },
       skip,
       take: pageSize,
@@ -60,13 +67,13 @@ export const GET = async (req: NextRequest) => {
 export const POST = async (req: NextRequest) => {
   const data: IPermohonanKredit = await req.json();
   try {
-    const { id, JenisPemohon, Document, ...permohonan } = data;
-    const { id: docId, User, ...doc } = data.Document;
+    const { id, JenisPemohon, User, Document, ...permohonan } = data;
+    const { id: docId, PermohonanAction, ...doc } = data.Document;
     await prisma.$transaction(async (tx) => {
-      const saveDoc = await prisma.document.create({
+      const saveDoc = await tx.document.create({
         data: doc,
       });
-      await prisma.permohonanKredit.create({
+      await tx.permohonanKredit.create({
         data: { ...permohonan, documentId: saveDoc.id },
       });
       return saveDoc;
@@ -80,6 +87,12 @@ export const POST = async (req: NextRequest) => {
       JSON.stringify({ status: 201, msg: "OK" }),
       "Berhasil Menambahkan Permohonan Kredit " + data.fullname
     );
+    await sendEmail(
+      process.env.EMAIL_RECEIVER_DEFAULT || "",
+      "",
+      "Permohonan Kredit Baru",
+      "Ada penambahan permohonan kredit baru"
+    );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
     console.log(err);
@@ -89,8 +102,8 @@ export const POST = async (req: NextRequest) => {
 export const PUT = async (req: NextRequest) => {
   const data: IPermohonanKredit = await req.json();
   try {
-    const { id, JenisPemohon, Document, ...permohonan } = data;
-    const { id: docId, User, ...doc } = data.Document;
+    const { id, JenisPemohon, User, Document, ...permohonan } = data;
+    const { id: docId, PermohonanAction, ...doc } = data.Document;
     await prisma.$transaction([
       prisma.permohonanKredit.update({ where: { id: id }, data: permohonan }),
       prisma.document.update({ where: { id: docId }, data: doc }),
@@ -105,6 +118,12 @@ export const PUT = async (req: NextRequest) => {
       `Berhasil ${data.status ? "Update" : "Hapus"} Permohonan Kredit ${
         data.fullname
       }`
+    );
+    await sendEmail(
+      process.env.EMAIL_RECEIVER_DEFAULT || "",
+      "",
+      "Perubahan pada data Permohonan Kredit",
+      `Data Permohnan Kredit ${data.fullname} berubah`
     );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {

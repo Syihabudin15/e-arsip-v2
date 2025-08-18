@@ -5,6 +5,8 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import { useState } from "react";
+import { PDFDocument } from "pdf-lib";
+import * as pdfjsLib from "pdfjs-dist";
 
 export function MyPDFViewer({
   fileUrl,
@@ -97,7 +99,7 @@ export function MyPDFViewer({
     <div
       style={{
         height: "100%",
-        border: "1px solid black",
+        // border: "1px solid black",
         transition: "transform 0.3s ease",
       }}
       onWheel={handleWheel}
@@ -111,3 +113,63 @@ export function MyPDFViewer({
     </div>
   );
 }
+
+export const isPdfProtected = async (file: File) => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    await PDFDocument.load(arrayBuffer); // Kalau berhasil berarti tidak terkunci
+    return { status: false, msg: "OK" };
+  } catch (err: any) {
+    if (
+      err.message.toLowerCase().includes("password") ||
+      err.message.toLowerCase().includes("encrypted")
+    ) {
+      return {
+        status: true,
+        msg: "PDF memiliki proteksi. Mohon hapus dulu proteksinya",
+      };
+    }
+    return { status: true, msg: "Gagal Upload file. Periksa jaringan!" };
+  }
+};
+
+export const handleUnlock = async (file: File, pwd: string) => {
+  // Set worker ke CDN pdfjs
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+  try {
+    // Load PDF pakai pdfjs-dist dengan password (kalau ada)
+    const loadingTask = pdfjsLib.getDocument({
+      data: await file.arrayBuffer(),
+      password: pwd,
+    });
+
+    await loadingTask.promise;
+
+    // Gunakan pdf-lib untuk membuat ulang tanpa password
+    const pdfDoc = await PDFDocument.load(await file.arrayBuffer(), {
+      ignoreEncryption: true,
+    });
+    const unlockedBytes = await pdfDoc.save();
+
+    // pastikan tipe ArrayBuffer biasa
+    const unlockedArrayBuffer: ArrayBuffer = unlockedBytes.slice().buffer;
+
+    const unlockedFile = new File([unlockedArrayBuffer], file.name, {
+      type: "application/pdf",
+    });
+    return { status: true, file: unlockedFile, msg: "OK" };
+  } catch (error) {
+    console.error(error);
+    if (error instanceof Error) {
+      if ((error as any).name === "PasswordException") {
+        return { status: false, file: null, msg: "Password salah!!" };
+      }
+      return { status: false, file: null, msg: error.message };
+    }
+    return {
+      status: true,
+      file: null,
+      msg: "gagal unlock PDF!!",
+    };
+  }
+};

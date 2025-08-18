@@ -19,7 +19,8 @@ import { useEffect, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import dynamic from "next/dynamic";
-// import { MyPDFViewer } from "@/components/utils/LayoutUtil";
+import Link from "next/link";
+import { useUser } from "@/components/contexts/UserContext";
 const MyPDFViewer = dynamic(
   () => import("@/components/utils/LayoutUtil").then((d) => d.MyPDFViewer),
   {
@@ -253,17 +254,15 @@ export default function TablePermohonanKredit() {
           <div className="flex my-2 gap-2 justify-between overflow-auto">
             <div className="flex gap-2">
               {hasAccess("write") && (
-                <Button
-                  icon={<PlusCircleOutlined />}
-                  type="primary"
-                  size="small"
-                  onClick={() =>
-                    window &&
-                    window.location.replace("/permohonan-kredit/create")
-                  }
-                >
-                  New
-                </Button>
+                <Link href={"/permohonan-kredit/create"}>
+                  <Button
+                    icon={<PlusCircleOutlined />}
+                    type="primary"
+                    size="small"
+                  >
+                    New
+                  </Button>
+                </Link>
               )}
               <FilterOption
                 items={jeniss.map((j) => ({ label: j.name, value: j.id }))}
@@ -627,7 +626,7 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
         <div>
           <Input
             disabled
-            value={data.Document.accountNumber || ""}
+            value={data.accountNumber || ""}
             style={{ color: "GrayText" }}
           />
         </div>
@@ -660,7 +659,7 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
         <div>
           <Input
             disabled
-            value={data.Document.User.fullname}
+            value={data.User.fullname}
             style={{ color: "GrayText" }}
           />
         </div>
@@ -670,7 +669,7 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
         <div>
           <Input
             disabled
-            value={data.Document.User.email}
+            value={data.User.email}
             style={{ color: "GrayText" }}
           />
         </div>
@@ -678,15 +677,15 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
       <div className="p-2 rounded bg-gradient-to-br from-blue-500 to-purple-500 font-bold text-gray-50">
         <p>KETERANGAN KETERANGAN</p>
       </div>
-      {data.Document.description &&
-        (JSON.parse(data.Document.description) as IDescription[]).map(
+      {data.description &&
+        (JSON.parse(data.description) as IDescription[]).map(
           (d: IDescription, i: number) => (
             <FormInput
               type="area"
               disable
-              label={"Keterangan " + d.date}
-              value={d.desc}
-              onChange={(e: string) => {}}
+              label={`${d.fullname} (${d.date})`}
+              value={d.lastValue}
+              onChange={() => {}}
               key={i}
             />
           )
@@ -697,6 +696,7 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
 
 const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
   const { access, hasAccess } = useAccess("/permohonan-kredit");
+  const user = useUser();
   const [allFile, setAllFile] = useState<string>();
 
   useEffect(() => {
@@ -724,7 +724,7 @@ const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
                   <div className="h-[70vh]">
                     <MyPDFViewer
                       fileUrl={allFile}
-                      download={hasAccess("download") ? true : false}
+                      download={hasAccess("download")}
                     />
                   </div>
                 )}
@@ -739,7 +739,16 @@ const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
                 <div className="h-[70vh]">
                   <MyPDFViewer
                     fileUrl={f.file}
-                    download={hasAccess("download") ? true : false}
+                    download={(() => {
+                      if (!f.allowedDownload) return false;
+                      const filter = f.allowedDownload
+                        .split(",")
+                        .filter((i) => user && parseInt(i) === user.id);
+                      if (hasAccess("download") || filter.length !== 0) {
+                        return true;
+                      }
+                      return false;
+                    })()}
                   />
                 </div>
               ),

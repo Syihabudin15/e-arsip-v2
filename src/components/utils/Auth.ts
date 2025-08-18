@@ -55,7 +55,20 @@ export async function refreshToken(request: NextRequest) {
 
   const parsed = await decrypt(session);
   // parsed.expires = new Date(Date.now() + 3600 * 1000 * 5); // Versi Perjam (5 Jam)
-  parsed.expires = new Date(Date.now() + 5 * 60 * 1000); // Versi Permenit (5 Menit)
+  // parsed.expires = new Date(Date.now() + 5 * 60 * 1000); // Versi Permenit (5 Menit)
+  // Ambil durasi dan threshold dari env
+  const refreshMinutes = Number(process.env.SESSION_REFRESH_MINUTES) || 5;
+  const thresholdSeconds = Number(process.env.SESSION_THRESHOLD_SECONDS) || 60;
+
+  // Hitung sisa waktu
+  const timeRemaining = new Date(parsed.expires).getTime() - Date.now();
+
+  // Kalau sisa < threshold → perpanjang refreshMinutes menit
+  let shouldRefresh = false;
+  if (timeRemaining < thresholdSeconds * 1000) {
+    parsed.expires = new Date(Date.now() + refreshMinutes * 60 * 1000);
+    shouldRefresh = true;
+  }
 
   let res: NextResponse;
   // Jika di halaman root "/" dan ada session → redirect ke /dashboard
@@ -67,7 +80,7 @@ export async function refreshToken(request: NextRequest) {
   res.cookies.set({
     name: "session",
     value: await encrypt(parsed),
-    expires: parsed.expires,
+    expires: new Date(parsed.expires),
   });
   return res;
 }

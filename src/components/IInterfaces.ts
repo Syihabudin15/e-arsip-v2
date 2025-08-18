@@ -4,6 +4,7 @@ import {
   Role,
   User,
   Document,
+  PermohonanAction,
 } from "@prisma/client";
 
 export interface IUser extends User {
@@ -27,24 +28,29 @@ export interface IFormInput {
   disable?: boolean;
   hide?: boolean;
   options?: { label: any; value: any }[];
+  optionsMode?: "tags" | "multiple";
 }
-
 interface IDocument extends Document {
-  User: User;
+  PermohonanAction: PermohonanAction[];
 }
 export interface IPermohonanKredit extends PermohonanKredit {
   JenisPemohon: JenisPemohon;
   Document: IDocument;
+  User: User;
 }
 
 export interface IFileList {
+  allowedDownload: string;
   name: string;
   file: string;
 }
 
 export interface IDescription {
   date: string;
-  desc: string;
+  userId: number;
+  fullname: string;
+  prevValue: any;
+  lastValue: any;
 }
 
 export interface IMenu {
@@ -62,4 +68,13 @@ export interface WithAccessOptions {
 export interface EditActivity {
   time: string;
   desc: string;
+}
+
+export interface IExcelColumn {
+  header: string;
+  key: string;
+  width?: number;
+}
+export interface IExcelData {
+  [key: string]: any;
 }

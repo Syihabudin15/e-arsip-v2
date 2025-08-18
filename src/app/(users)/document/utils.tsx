@@ -2,11 +2,13 @@
 
 import {
   EditActivity,
+  IExcelColumn,
+  IExcelData,
   IFileList,
   IPermohonanKredit,
 } from "@/components/IInterfaces";
 import { FilterOption } from "@/components/utils/FormUtils";
-import { FormOutlined, LoadingOutlined } from "@ant-design/icons";
+import { DeleteFilled, FormOutlined, LoadingOutlined } from "@ant-design/icons";
 import { JenisPemohon } from "@prisma/client";
 import { Button, Input, Table, TableProps, Typography } from "antd";
 import moment from "moment";
@@ -15,6 +17,8 @@ import { useEffect, useState } from "react";
 
 import { useAccess } from "@/components/utils/PermissionUtil";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { ExportData } from "../logs/util";
 const { Paragraph } = Typography;
 
 const DetailPermohonan = dynamic(
@@ -62,7 +66,6 @@ export default function TableDokumen() {
           if (res.status === 200)
             setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
         });
-      console.log(access);
     })();
   }, []);
 
@@ -106,13 +109,10 @@ export default function TableDokumen() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.fullname}</>;
-      },
     },
     {
       title: "NOMOR NIK",
-      dataIndex: "nik",
+      dataIndex: "NIK",
       key: "nik",
       className: "text-xs",
       width: 200,
@@ -124,13 +124,10 @@ export default function TableDokumen() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.NIK && record.NIK}</>;
-      },
     },
     {
       title: "JENIS PEMOHON",
-      dataIndex: "jenisPemohon",
+      dataIndex: ["JenisPemohon", "name"],
       key: "jenisPemohon",
       className: "text-xs",
       width: 200,
@@ -142,13 +139,10 @@ export default function TableDokumen() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.JenisPemohon.name}</>;
-      },
     },
     {
       title: "NAMA MARKETING",
-      dataIndex: "marketing",
+      dataIndex: ["User", "fullname"],
       key: "marketing",
       className: "text-xs",
       width: 200,
@@ -160,13 +154,10 @@ export default function TableDokumen() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.Document.User.fullname}</>;
-      },
     },
     {
       title: "NO REKENING",
-      dataIndex: "account",
+      dataIndex: "accountNumber",
       key: "account",
       className: "text-xs",
       width: 200,
@@ -177,9 +168,6 @@ export default function TableDokumen() {
             fontSize: 12,
           },
         };
-      },
-      render(value, record, index) {
-        return <>{record.Document.accountNumber}</>;
       },
     },
     {
@@ -374,10 +362,9 @@ export default function TableDokumen() {
     },
     {
       title: "LAST ACTIVITY",
-      dataIndex: "activity",
-      key: "activity",
+      dataIndex: "lastactivity",
+      key: "lastactivity",
       className: "text-xs",
-      width: 300,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -386,31 +373,100 @@ export default function TableDokumen() {
           },
         };
       },
-      render(value, record, index) {
-        const parse = record.Document.activity
-          ? (JSON.parse(record.Document.activity) as EditActivity[])
-          : [];
-        return (
-          <>
-            <Paragraph
-              ellipsis={{
-                rows: 2,
-                expandable: "collapsible",
-              }}
-              style={{ fontSize: 11 }}
-            >
-              {parse.map((p) => (
-                <>
-                  {"{"}
-                  {p.time} | {p.desc}
-                  {"};"} <br />
-                  <br />
-                </>
-              ))}
-            </Paragraph>
-          </>
-        );
-      },
+      children: [
+        {
+          title: "ACTIVITY",
+          dataIndex: "activity",
+          key: "activity",
+          className: "text-xs",
+          width: 300,
+          onHeaderCell: () => {
+            return {
+              ["style"]: {
+                textAlign: "center",
+                fontSize: 12,
+              },
+            };
+          },
+          render(value, record, index) {
+            const parse = record.activity
+              ? (JSON.parse(record.activity) as EditActivity[])
+              : [];
+            return (
+              <>
+                <Paragraph
+                  ellipsis={{
+                    rows: 2,
+                    expandable: "collapsible",
+                  }}
+                  style={{ fontSize: 11 }}
+                >
+                  {parse.map((p) => (
+                    <>
+                      {"{"}
+                      {p.time} | {p.desc}
+                      {"};"} <br />
+                      <br />
+                    </>
+                  ))}
+                </Paragraph>
+              </>
+            );
+          },
+        },
+        {
+          title: "EXPORT",
+          dataIndex: "export",
+          key: "export",
+          className: "text-xs",
+          width: 100,
+          onHeaderCell: () => {
+            return {
+              ["style"]: {
+                textAlign: "center",
+                fontSize: 12,
+              },
+            };
+          },
+          render(value, record, index) {
+            const parse = record.activity
+              ? (JSON.parse(record.activity) as EditActivity[])
+              : [];
+            const columns: IExcelColumn[] = [
+              { header: "NAMA DEBITUR", key: "namaDebitur", width: 30 },
+              { header: "NOMOR NIK", key: "nik", width: 30 },
+              { header: "JENIS PEMOHON", key: "jenisPemohon", width: 30 },
+              { header: "MARKETING", key: "marketing", width: 30 },
+              { header: "CREATED_AT", key: "createdAt", width: 30 },
+              ...(parse &&
+                parse.map((p) => ({
+                  header: "AKTIVITAS " + p.time,
+                  key: p.time,
+                  width: 50,
+                }))),
+            ];
+            const rows = {
+              namaDebitur: record.fullname,
+              nik: record.NIK,
+              jenisPemohon: record.JenisPemohon.name,
+              marketing: record.User.fullname,
+              createdAt: moment(record.createdAt).format("DD/MM/YYYY"),
+            } as IExcelData;
+            parse.forEach((p) => {
+              rows[p.time] = p.desc; // misalnya "Edit field X"
+            });
+            return (
+              <div className="flex justify-center">
+                <ExportData
+                  filename="LastActivities"
+                  columns={columns}
+                  rows={[rows]}
+                />
+              </div>
+            );
+          },
+        },
+      ],
     },
     {
       title: "CREATED AT",
@@ -467,16 +523,24 @@ export default function TableDokumen() {
           <div className="flex gap-2 justify-center" key={record.id}>
             {hasAccess("detail") && <DetailPermohonan data={record} />}
             {hasAccess("update") && (
-              <Button
-                icon={<FormOutlined />}
-                size="small"
-                type="primary"
-                style={{ backgroundColor: "green" }}
-                onClick={() =>
-                  window &&
-                  window.location.replace("/permohonan-kredit/" + record.id)
-                }
-              ></Button>
+              <Link href={"/permohonan-kredit/" + record.id}>
+                <Button
+                  icon={<FormOutlined />}
+                  size="small"
+                  type="primary"
+                  style={{ backgroundColor: "green" }}
+                ></Button>
+              </Link>
+            )}
+            {hasAccess("update") && (
+              <Link href={"/permohonan-kredit/delete/" + record.id}>
+                <Button
+                  icon={<DeleteFilled />}
+                  size="small"
+                  type="primary"
+                  danger
+                ></Button>
+              </Link>
             )}
           </div>
         );

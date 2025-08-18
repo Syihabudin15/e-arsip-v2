@@ -17,7 +17,7 @@ export async function GET() {
   ] = await Promise.all([
     prisma.user.count({ where: { status: true } }),
     prisma.role.count(),
-    prisma.document.count({ where: { status: true } }),
+    prisma.document.count(),
     prisma.permohonanKredit.count({
       where: { status: true, createdAt: { gte: today } },
     }),
@@ -82,7 +82,7 @@ export async function GET() {
   const lastPermohonan = await prisma.permohonanKredit.findMany({
     orderBy: { createdAt: "desc" },
     take: 5,
-    include: { JenisPemohon: true, Document: { include: { User: true } } },
+    include: { JenisPemohon: true, Document: true, User: true },
   });
 
   const lastLogs = await prisma.logs.findMany({

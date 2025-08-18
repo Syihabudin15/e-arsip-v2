@@ -8,6 +8,7 @@ import { FormInput, FormUpload } from "@/components/utils/FormUtils";
 import { JenisPemohon, User } from "@prisma/client";
 import { App, Button, Select, Spin } from "antd";
 import moment from "moment";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function CreatePermohonanKredit({
@@ -25,6 +26,7 @@ export default function CreatePermohonanKredit({
   const [activity, setActivity] = useState<string[]>([]);
   const user = useUser();
   const { modal } = App.useApp();
+  const pathname = usePathname();
 
   useEffect(() => {
     setLoading(true);
@@ -53,38 +55,41 @@ export default function CreatePermohonanKredit({
     if (!record && user) {
       setData({
         ...data,
-        Document: {
-          ...data.Document,
-          userId: user.id,
-          User: user,
-        },
+        userId: user.id,
+        User: user,
       });
     }
   }, [user]);
 
   const handleSubmit = async () => {
-    if (!data.JenisPemohon.name || !data.Document.User.fullname)
+    if (!data.JenisPemohon.name || !data.User.fullname)
       return alert("Mohon lengkapi data terlebih dahulu");
     setLoading(true);
     if ("key" in data) {
       delete data.key;
     }
-    if (tempDesc) {
-      const temp = data.Document.description
-        ? (JSON.parse(data.Document.description) as IDescription[])
-        : [];
-      temp.push({ date: moment().format("DD/MM/YYYY"), desc: tempDesc });
-      data.Document.description = JSON.stringify(temp);
-    }
     if (record && activity) {
-      const temp = data.Document.activity
-        ? (JSON.parse(data.Document.activity) as EditActivity[])
+      const temp = data.activity
+        ? (JSON.parse(data.activity) as EditActivity[])
         : [];
       temp.push({
         time: moment().format("DD/MM/YYYY HH:mm"),
         desc: `${user?.fullname}: ${activity.join(",")}`,
       });
-      data.Document.activity = JSON.stringify(temp);
+      data.activity = JSON.stringify(temp);
+    }
+    if (tempDesc) {
+      const temp = data.description
+        ? (JSON.parse(data.description) as IDescription[])
+        : [];
+      temp.push({
+        date: moment().format("DD/MM/YYYY HH:mm"),
+        prevValue: tempDesc,
+        lastValue: tempDesc,
+        fullname: user?.fullname || "",
+        userId: user?.id || 0,
+      });
+      data.description = JSON.stringify(temp);
     }
     await fetch("/api/permohonan", {
       method: record ? "PUT" : "POST",
@@ -116,8 +121,10 @@ export default function CreatePermohonanKredit({
 
   return (
     <Spin spinning={loading}>
-      <div className="flex flex-col sm:flex-row gap-5  p-1 items-start">
-        <div className="flex-1 flex gap-2 justify-between flex-wrap">
+      <div
+        className={`flex flex-col sm:flex-row gap-5  p-1 items-start h-[92vh] overflow-y-auto`}
+      >
+        <div className={`flex-1 flex  gap-2 justify-between flex-wrap`}>
           <div className="w-full bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50 p-2 rounded font-bold">
             <p>DATA PEMOHON</p>
           </div>
@@ -162,14 +169,14 @@ export default function CreatePermohonanKredit({
           />
           <FormInput
             label="Nomor Rekening"
-            value={data.Document.accountNumber}
+            value={data.accountNumber}
             onChange={(e: string) => {
               setData({
                 ...data,
-                Document: { ...data.Document, accountNumber: e },
+                accountNumber: e,
               });
               if (record) {
-                const txt = `Edit No Rekening (${record.Document.accountNumber} to ${e})`;
+                const txt = `Edit No Rekening (${record.accountNumber} to ${e})`;
                 setActivity((prev) => {
                   prev = prev
                     ? prev.filter((p) => !p.includes("Edit No Rekening"))
@@ -217,19 +224,20 @@ export default function CreatePermohonanKredit({
             <Select
               options={userss.map((u) => ({ label: u.fullname, value: u.id }))}
               style={{ width: "100%" }}
-              value={data.Document.userId || undefined}
+              value={data.userId || undefined}
               disabled={user && user.role.roleName === "MARKETING"}
               onChange={(e) => {
+                const find = userss.filter((u) => u.id === e);
+                if (find.length === 1)
+                  return alert("Data Marketing tidak valid");
+
                 setData({
                   ...data,
-                  Document: {
-                    ...data.Document,
-                    userId: e,
-                    User: userss.filter((u) => u.id === e)[0],
-                  },
+                  userId: e,
+                  User: find[0],
                 });
                 if (record) {
-                  const txt = `Edit Marketing (${record.Document.userId} to ${e})`;
+                  const txt = `Edit Marketing (${record.userId} to ${e})`;
                   setActivity((prev) => {
                     prev = prev
                       ? prev.filter((p) => !p.includes("Edit Marketing"))
@@ -276,15 +284,44 @@ export default function CreatePermohonanKredit({
           <div className="w-full bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50 p-2 rounded font-bold">
             <p>KETERANGAN</p>
           </div>
-          {data.Document.description &&
-            (JSON.parse(data.Document.description) as IDescription[]).map(
+          {data.description &&
+            (JSON.parse(data.description) as IDescription[]).map(
               (d: IDescription, i: number) => (
                 <FormInput
                   type="area"
-                  label={"Keterangan " + d.date}
-                  disable
-                  value={d.desc}
-                  onChange={(e: string) => {}}
+                  label={`${i + 1} (${d.date})`}
+                  value={d.lastValue}
+                  onChange={(e: string) => {
+                    const prevDesc = JSON.parse(
+                      record ? record.description || "[]" : "[]"
+                    ) as IDescription[];
+                    setData((prev) => {
+                      const t = JSON.parse(
+                        prev.description || "[]"
+                      ) as IDescription[];
+                      t[i].prevValue = prevDesc[i].lastValue; // update desc sesuai index
+                      t[i].lastValue = e; // update desc sesuai index
+                      return {
+                        ...prev,
+                        description: JSON.stringify(t), // simpan kembali ke string
+                      };
+                    });
+                    if (record) {
+                      const txt = `Edit Keterangan [index(${i}) ${d.date}]: (${prevDesc[i].lastValue} to ${e})`;
+                      setActivity((prev) => {
+                        prev = prev
+                          ? prev.filter(
+                              (p) =>
+                                !p.includes(
+                                  `Edit Keterangan [index(${i}) ${d.date}]`
+                                )
+                            )
+                          : [];
+                        prev.push(txt);
+                        return prev;
+                      });
+                    }
+                  }}
                   align="col"
                   width={"48%"}
                   key={i}
@@ -293,7 +330,7 @@ export default function CreatePermohonanKredit({
             )}
           <FormInput
             type="area"
-            label="Keterangan"
+            label="Tambah Keterangan"
             value={tempDesc}
             onChange={(e: string) => {
               setTempDesc(e);
@@ -312,7 +349,7 @@ export default function CreatePermohonanKredit({
             width={"48%"}
           />
         </div>
-        <div className="flex-1">
+        <div className={`flex-1`}>
           <div className="w-full bg-gradient-to-br from-purple-500 to-green-500 text-gray-50 p-2 rounded font-bold">
             <p>BERKAS - BERKAS</p>
           </div>
@@ -482,6 +519,10 @@ const defaultPermohonan: IPermohonanKredit = {
   updatedAt: new Date(),
   jenisPemohonId: 0,
   documentId: 0,
+  accountNumber: "",
+  description: "",
+  activity: "",
+  userId: 0,
   JenisPemohon: {
     id: 0,
     name: "",
@@ -493,9 +534,7 @@ const defaultPermohonan: IPermohonanKredit = {
   },
   Document: {
     id: 0,
-    fullname: "",
-    accountNumber: "",
-    description: "",
+
     fileIdentitas: "",
     fileSLIK: "",
     fileJaminan: "",
@@ -505,24 +544,19 @@ const defaultPermohonan: IPermohonanKredit = {
     fileKepatuhan: "",
     fileLegal: "",
     fileCustody: "",
+    PermohonanAction: [],
+  },
+  User: {
+    id: 0,
+    fullname: "",
+    username: "",
+    password: "",
+    email: "",
+    photo: "",
 
     status: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-    userId: 0,
-    activity: null,
-    User: {
-      id: 0,
-      fullname: "",
-      username: "",
-      password: "",
-      email: "",
-      photo: "",
-
-      status: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      roleId: 0,
-    },
+    roleId: 0,
   },
 };
