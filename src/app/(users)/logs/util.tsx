@@ -385,6 +385,7 @@ export default function TableLogs() {
             <div className="flex gap-2">
               <ExportData
                 filename="LogAktivitas"
+                textDisplay
                 columns={[
                   { header: "NO", key: "no", width: 6 },
                   { header: "AKTIVITAS", key: "name", width: 30 },
