@@ -1,6 +1,7 @@
 "use client";
 
-import { IPermission } from "@/components/IInterfaces";
+import { useUser } from "@/components/contexts/UserContext";
+import { IPermission, IUser } from "@/components/IInterfaces";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   DeleteOutlined,
@@ -21,6 +22,7 @@ export default function TableRole() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const { access, hasAccess } = useAccess("/roles");
+  const user = useUser();
 
   const getData = async () => {
     setLoading(true);
@@ -176,8 +178,12 @@ export default function TableRole() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            {hasAccess("delete") && (
-              <DeleteRole data={record} getData={getData} />
+            {user && (
+              <>
+                {hasAccess("delete") && (
+                  <DeleteRole data={record} getData={getData} user={user} />
+                )}
+              </>
             )}
             {hasAccess("update") && (
               <Button
@@ -246,7 +252,15 @@ export default function TableRole() {
   );
 }
 
-const DeleteRole = ({ data, getData }: { data: Role; getData: Function }) => {
+const DeleteRole = ({
+  data,
+  getData,
+  user,
+}: {
+  data: Role;
+  getData: Function;
+  user: IUser;
+}) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { modal } = App.useApp();
@@ -261,7 +275,7 @@ const DeleteRole = ({ data, getData }: { data: Role; getData: Function }) => {
       body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
           modal.success({
             title: "BERHASIL",
@@ -269,6 +283,13 @@ const DeleteRole = ({ data, getData }: { data: Role; getData: Function }) => {
           });
           getData();
           setOpen(false);
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Hapus Data Role ${data.roleName}`,
+              description: `${user?.fullname} Berhasil melakukan menghapus data Role ${data.roleName}`,
+            }),
+          });
           return;
         }
         modal.error({ title: "ERROR", content: res.msg });

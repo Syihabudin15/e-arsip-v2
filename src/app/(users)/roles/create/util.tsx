@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@/components/contexts/UserContext";
 import { IMenu } from "@/components/IInterfaces";
 import { menuItems } from "@/components/utils/LayoutUtil";
 import { Role } from "@prisma/client";
@@ -28,6 +29,7 @@ export default function UpsertRole({ record }: { record?: Role }) {
     record ? MergeMenu(defaultMenu, JSON.parse(record.permission)) : defaultMenu
   );
   const { modal } = App.useApp();
+  const user = useUser();
 
   useEffect(() => {
     const newMenu = menus
@@ -53,11 +55,18 @@ export default function UpsertRole({ record }: { record?: Role }) {
       body: JSON.stringify(data),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
           modal.success({
             title: "BERHASIL",
             content: `Data berhasil ${record ? "di Update" : "ditambahkan"}!`,
+          });
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Update Data Role ${data.roleName}`,
+              description: `${user?.fullname} Berhasil melakukan update pada data Role ${data.roleName}`,
+            }),
           });
           window && window.location.replace("/roles");
           return;

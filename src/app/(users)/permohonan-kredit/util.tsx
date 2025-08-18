@@ -4,6 +4,7 @@ import {
   IDescription,
   IFileList,
   IPermohonanKredit,
+  IUser,
 } from "@/components/IInterfaces";
 import { FilterOption, FormInput } from "@/components/utils/FormUtils";
 import {
@@ -39,6 +40,7 @@ export default function TablePermohonanKredit() {
   const [loading, setLoading] = useState(false);
   const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
   const { access, hasAccess } = useAccess("/permohonan-kredit");
+  const user = useUser();
 
   const getData = async () => {
     setLoading(true);
@@ -235,8 +237,16 @@ export default function TablePermohonanKredit() {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
             {hasAccess("detail") && <DetailPermohonan data={record} />}
-            {hasAccess("delete") && (
-              <DeletePermohonan data={record} getData={getData} />
+            {user && (
+              <>
+                {hasAccess("delete") && (
+                  <DeletePermohonan
+                    data={record}
+                    getData={getData}
+                    user={user}
+                  />
+                )}
+              </>
             )}
           </div>
         );
@@ -304,9 +314,11 @@ export default function TablePermohonanKredit() {
 const DeletePermohonan = ({
   data,
   getData,
+  user,
 }: {
   data: IPermohonanKredit;
   getData: Function;
+  user: IUser;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -321,14 +333,21 @@ const DeletePermohonan = ({
       body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
           Modal.success({
             title: "BERHASIL",
             content: `Data ${data && data.fullname} berhasil dihapus`,
           });
-          getData();
           setOpen(false);
+          getData();
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Permohonan Kredit ${data.fullname} Dihapus`,
+              description: `${user?.fullname} Berhasil menghapus data Permohonan Kredit ${data.fullname}`,
+            }),
+          });
           return;
         }
         Modal.error({ title: "ERROR", content: res.msg });

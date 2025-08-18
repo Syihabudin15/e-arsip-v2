@@ -396,7 +396,7 @@ const ProsesDeleteFile = ({
       body: JSON.stringify(savedData),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status !== 201) {
           modal.error({ title: "ERROR", content: res.msg });
         } else {
@@ -406,6 +406,19 @@ const ProsesDeleteFile = ({
           });
           setOpen(false);
           getData();
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Proses Permohonan Hapus File`,
+              description: `${
+                user?.fullname
+              } Berhasil melakukan proses pada data permohonan hapus file ${
+                data.rootFilename
+              }. sekarang data data tersebut duah dihapus dari database. <br/> Berikut detail dari data data yang telah dihapus ${JSON.stringify(
+                data.files
+              )}`,
+            }),
+          });
         }
       })
       .catch((err) => {

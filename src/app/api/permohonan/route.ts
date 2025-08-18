@@ -1,4 +1,3 @@
-import { sendEmail } from "@/components/IEmail";
 import { IPermohonanKredit } from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
 import { logActivity } from "@/components/utils/Auth";
@@ -87,12 +86,6 @@ export const POST = async (req: NextRequest) => {
       JSON.stringify({ status: 201, msg: "OK" }),
       "Berhasil Menambahkan Permohonan Kredit " + data.fullname
     );
-    await sendEmail(
-      process.env.EMAIL_RECEIVER_DEFAULT || "",
-      "",
-      "Permohonan Kredit Baru",
-      "Ada penambahan permohonan kredit baru"
-    );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
     console.log(err);
@@ -118,12 +111,6 @@ export const PUT = async (req: NextRequest) => {
       `Berhasil ${data.status ? "Update" : "Hapus"} Permohonan Kredit ${
         data.fullname
       }`
-    );
-    await sendEmail(
-      process.env.EMAIL_RECEIVER_DEFAULT || "",
-      "",
-      "Perubahan pada data Permohonan Kredit",
-      `Data Permohnan Kredit ${data.fullname} berubah`
     );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {

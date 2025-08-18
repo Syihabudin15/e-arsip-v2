@@ -96,11 +96,24 @@ export default function CreatePermohonanKredit({
       body: JSON.stringify(data),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201) {
           modal.success({
             title: "BERHASIL",
             content: `Data berhasil ${record ? "di Update" : "Ditambahkan"}`,
+          });
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `${record ? "Update" : ""} Permohonan Kredit ${
+                !record ? "Baru" : ""
+              } ${data.fullname}`,
+              description: `${user?.fullname} Berhasil ${
+                record ? "update" : "menambahkan"
+              } data Permohonan Kredit ${!record ? "baru" : ""} ${
+                data.fullname
+              }`,
+            }),
           });
         } else {
           modal.error({

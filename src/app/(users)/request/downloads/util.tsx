@@ -410,7 +410,7 @@ const ProsesDownload = ({
       body: JSON.stringify(savedData),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status !== 201) {
           modal.error({ title: "ERROR", content: res.msg });
         } else {
@@ -420,6 +420,19 @@ const ProsesDownload = ({
           });
           setOpen(false);
           getData();
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Permohonan Download Di Proses`,
+              description: `${
+                user?.fullname
+              } Berhasil melakukan proses pada permohonan download ${
+                data.Document.PermohonanKredit[0].fullname
+              }. Sekarang ${data.Requester.fullname} dapat mendownload file ${
+                data.rootFilename
+              } (${JSON.stringify(data.files)})`,
+            }),
+          });
         }
       })
       .catch((err) => {
@@ -629,7 +642,7 @@ const CreateDownload = ({
       body: JSON.stringify([newData]),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201) {
           modal.success({
             title: "Berhasil",
@@ -637,6 +650,13 @@ const CreateDownload = ({
           });
           setOpen(false);
           getData();
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Permohonan Download File (${user.fullname})`,
+              description: `${user?.fullname} mengajukan permohonan download file pada data pemohon kredit ${selected?.fullname} dengan data data sebagai berikut: ${data.rootFilename} (${data.files})`,
+            }),
+          });
         }
       })
       .catch((err) => {

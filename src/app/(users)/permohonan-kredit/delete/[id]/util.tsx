@@ -78,10 +78,17 @@ export default function DeleteFiles({ id }: { id: number }) {
       body: JSON.stringify(newdata),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         modal.success({
           title: "BERHASIL",
-          content: "Permohnan hapus berkas berhasil dikirimkan",
+          content: "Permohnan hapus file berhasil dikirimkan",
+        });
+        await fetch("/api/sendEmail", {
+          method: "POST",
+          body: JSON.stringify({
+            subject: `Permohonan Hapus File Baru`,
+            description: `${user?.fullname} berhasil mengajukan permohnan hapus file baru untuk data kredit ${data?.fullname}`,
+          }),
         });
         window && window.location.replace("/request/delete");
       })

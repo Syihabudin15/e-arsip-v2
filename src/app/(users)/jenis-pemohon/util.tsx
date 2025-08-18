@@ -1,5 +1,7 @@
 "use client";
 
+import { useUser } from "@/components/contexts/UserContext";
+import { IUser } from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import {
@@ -21,6 +23,7 @@ export default function TableJenisPemohon() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const { access, hasAccess } = useAccess("/jenis-pemohon");
+  const user = useUser();
 
   const getData = async () => {
     setLoading(true);
@@ -171,11 +174,27 @@ export default function TableJenisPemohon() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            {hasAccess("update") && (
-              <UpsertJenisPemohon data={record} getData={getData} />
+            {user && (
+              <>
+                {hasAccess("update") && (
+                  <UpsertJenisPemohon
+                    data={record}
+                    getData={getData}
+                    user={user}
+                  />
+                )}
+              </>
             )}
-            {hasAccess("delete") && (
-              <DeleteJenisPemohon data={record} getData={getData} />
+            {user && (
+              <>
+                {hasAccess("delete") && (
+                  <DeleteJenisPemohon
+                    data={record}
+                    getData={getData}
+                    user={user}
+                  />
+                )}
+              </>
             )}
           </div>
         );
@@ -192,7 +211,13 @@ export default function TableJenisPemohon() {
           </div>
           <div className="flex my-2 gap-2 justify-between">
             <div className="flex gap-2">
-              {hasAccess("write") && <UpsertJenisPemohon getData={getData} />}
+              {user && (
+                <>
+                  {hasAccess("write") && (
+                    <UpsertJenisPemohon getData={getData} user={user} />
+                  )}
+                </>
+              )}
             </div>
             <div className="w-42">
               <Input.Search
@@ -227,9 +252,11 @@ export default function TableJenisPemohon() {
 const UpsertJenisPemohon = ({
   data,
   getData,
+  user,
 }: {
   data?: JenisPemohon;
   getData: Function;
+  user: IUser;
 }) => {
   const [tempData, setTempData] = useState(data || defaultJenisPemohon);
   const [open, setOpen] = useState(false);
@@ -246,7 +273,7 @@ const UpsertJenisPemohon = ({
       body: JSON.stringify({ ...tempData, updatedAt: new Date() }),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
           modal.success({
             title: "BERHASIL",
@@ -256,6 +283,15 @@ const UpsertJenisPemohon = ({
           });
           getData();
           setOpen(false);
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `${data ? "Update" : "Penambahan"} Data Jenis Pemohon`,
+              description: `${user?.fullname} Berhasil ${
+                data ? "Update" : "menambahkan"
+              } data Permohonan Kredit ${!data ? "Baru" : ""} ${tempData.name}`,
+            }),
+          });
           return;
         }
         modal.error({ title: "ERROR", content: res.msg });
@@ -312,9 +348,11 @@ const UpsertJenisPemohon = ({
 const DeleteJenisPemohon = ({
   data,
   getData,
+  user,
 }: {
   data: JenisPemohon;
   getData: Function;
+  user: IUser;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -330,7 +368,7 @@ const DeleteJenisPemohon = ({
       body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
           modal.success({
             title: "BERHASIL",
@@ -338,6 +376,13 @@ const DeleteJenisPemohon = ({
           });
           getData();
           setOpen(false);
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Jenis Pomohon Berhasil Dihapus`,
+              description: `${user?.fullname} Berhasil menghapus data Jenis Pemohon ${data.name}`,
+            }),
+          });
           return;
         }
         modal.error({ title: "ERROR", content: res.msg });

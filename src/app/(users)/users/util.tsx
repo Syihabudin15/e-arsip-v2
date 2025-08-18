@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@/components/contexts/UserContext";
 import { FormInput } from "@/components/utils/FormUtils";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import {
@@ -25,6 +26,7 @@ export default function TableUser() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const { access, hasAccess } = useAccess("/users");
+  const user = useUser();
 
   const getData = async () => {
     setLoading(true);
@@ -206,11 +208,24 @@ export default function TableUser() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            {hasAccess("delete") && (
-              <DeleteUser data={record} getData={getData} />
+            {user && (
+              <>
+                {hasAccess("delete") && (
+                  <DeleteUser data={record} getData={getData} user={user} />
+                )}
+              </>
             )}
-            {hasAccess("update") && (
-              <UpsertUser data={record} getData={getData} role={roles} />
+            {user && (
+              <>
+                {hasAccess("update") && (
+                  <UpsertUser
+                    data={record}
+                    getData={getData}
+                    role={roles}
+                    user={user}
+                  />
+                )}
+              </>
             )}
           </div>
         );
@@ -227,8 +242,12 @@ export default function TableUser() {
           </div>
           <div className="flex my-2 gap-2 justify-between">
             <div className="flex gap-2">
-              {hasAccess("write") && (
-                <UpsertUser getData={getData} role={roles} />
+              {user && (
+                <>
+                  {hasAccess("write") && (
+                    <UpsertUser getData={getData} role={roles} user={user} />
+                  )}
+                </>
               )}
             </div>
             <div className="w-42">
@@ -261,7 +280,15 @@ export default function TableUser() {
   );
 }
 
-const DeleteUser = ({ data, getData }: { data: IUser; getData: Function }) => {
+const DeleteUser = ({
+  data,
+  getData,
+  user,
+}: {
+  data: IUser;
+  getData: Function;
+  user: IUser;
+}) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { modal } = App.useApp();
@@ -276,7 +303,7 @@ const DeleteUser = ({ data, getData }: { data: IUser; getData: Function }) => {
       body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
           modal.success({
             title: "BERHASIL",
@@ -284,6 +311,13 @@ const DeleteUser = ({ data, getData }: { data: IUser; getData: Function }) => {
           });
           getData();
           setOpen(false);
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Hapus Data User ${data.fullname}`,
+              description: `${user?.fullname} Berhasil melakukan menghapus data user ${data.fullname}`,
+            }),
+          });
           return;
         }
         modal.error({ title: "ERROR", content: res.msg });
@@ -324,10 +358,12 @@ const UpsertUser = ({
   data,
   getData,
   role,
+  user,
 }: {
   data?: User;
   getData: Function;
   role: Role[];
+  user: IUser;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -350,7 +386,7 @@ const UpsertUser = ({
       }),
     })
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
           modal.success({
             title: "BERHASIL",
@@ -358,6 +394,17 @@ const UpsertUser = ({
           });
           getData();
           setOpen(false);
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `${data ? "Update" : "Create"} Data User ${
+                tempData.fullname
+              }`,
+              description: `${user?.fullname} Berhasil melakukan ${
+                data ? "Update pada data" : "menambahkan data user"
+              } ${tempData.fullname}`,
+            }),
+          });
           return;
         }
         modal.error({ title: "ERROR", content: res.msg });

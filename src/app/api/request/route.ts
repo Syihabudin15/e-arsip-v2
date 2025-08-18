@@ -1,6 +1,5 @@
 // import { SelectedFIles } from "@/app/(users)/permohonan-kredit/delete/[id]/util";
 import cloudinary from "@/components/Cloudinary";
-import { sendEmail } from "@/components/IEmail";
 import { IFileList } from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
 import { logActivity } from "@/components/utils/Auth";
@@ -18,14 +17,8 @@ export const POST = async (req: NextRequest) => {
       "permohonanAction",
       JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
-      `Berhasil mengajukan permohonan ${data.action} file ` +
+      `Berhasil mengajukan permohonan ${data[0].action} file ` +
         data.map((d: any) => d.rootFilename).join(",")
-    );
-    await sendEmail(
-      process.env.EMAIL_RECEIVER_DEFAULT || "",
-      "",
-      `Permohnan ${data.action} File`,
-      `Ada Permohonan baru untuk ${data.action} file`
     );
     return NextResponse.json(
       { data: saved, msg: "OK", status: 201 },
@@ -35,7 +28,7 @@ export const POST = async (req: NextRequest) => {
     console.log(err);
     await logActivity(
       req,
-      `Permohonan ${data.action} File Gagal`,
+      `Permohonan ${data[0].action} File Gagal`,
       "POST",
       "permohonanAction",
       JSON.stringify(data),
@@ -197,12 +190,6 @@ export const PUT = async (req: NextRequest) => {
           JSON.stringify({ status: 201, msg: "OK" }),
           "Berhasil proses permohonan hapus file " + data.rootFilename
         );
-        await sendEmail(
-          process.env.EMAIL_RECEIVER_DEFAULT || "",
-          "",
-          "Permohnan Hapus File",
-          "Ada Permohonan baru untuk penghapusan file"
-        );
         return NextResponse.json(
           { data: findDoc, msg: "OK", status: 201 },
           { status: 201 }
@@ -274,12 +261,6 @@ export const PUT = async (req: NextRequest) => {
           JSON.stringify(data),
           JSON.stringify({ status: 201, msg: "OK" }),
           "Berhasil proses permohonan Download file " + data.rootFilename
-        );
-        await sendEmail(
-          process.env.EMAIL_RECEIVER_DEFAULT || "",
-          "",
-          "Permohnan Download File",
-          "Ada Permohonan baru untuk download file"
         );
         return NextResponse.json(
           { data: findDoc, msg: "OK", status: 201 },
