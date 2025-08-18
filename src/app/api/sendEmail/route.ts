@@ -8,7 +8,7 @@ export const POST = async (req: NextRequest) => {
       process.env.EMAIL_RECEIVER_DEFAULT || "",
       "",
       data.subject,
-      data.decription
+      data.description
     );
     return NextResponse.json({ msg: "OK", status: 200 }, { status: 200 });
   } catch (err) {
