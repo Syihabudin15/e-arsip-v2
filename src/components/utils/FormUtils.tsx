@@ -1,14 +1,5 @@
-import {
-  App,
-  Button,
-  Input,
-  Modal,
-  Select,
-  Typography,
-  Upload,
-  UploadProps,
-} from "antd";
-import { IFileList, IFormInput } from "../IInterfaces";
+import { App, Button, Input, Modal, Select, Upload, UploadProps } from "antd";
+import { IFormInput, IRootFiles } from "../IInterfaces";
 import {
   CloudUploadOutlined,
   DeleteOutlined,
@@ -17,7 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { handleUnlock, isPdfProtected } from "./PDFUtils";
 import { usePathname } from "next/navigation";
-// const { Paragraph } = Typography;
+import { Files, RootFiles } from "@prisma/client";
 
 export const FormInput = (params: IFormInput) => {
   return (
@@ -100,25 +91,21 @@ export const FilterOption = ({
 };
 
 export const FormUpload = ({
-  value,
-  label,
+  data,
   setChange,
   hide,
   setActivity,
 }: {
-  value: string | null;
-  label: string;
+  data: IRootFiles;
   setChange: Function;
   hide?: boolean;
   setActivity?: Function;
 }) => {
-  const [files, setFiles] = useState<IFileList[]>(
-    value ? JSON.parse(value) : []
-  );
+  const [files, setFiles] = useState<Files[]>(data.Files || []);
   const pathname = usePathname();
 
   useEffect(() => {
-    setChange(JSON.stringify(files));
+    setChange(files);
   }, [files]);
 
   return (
@@ -127,21 +114,21 @@ export const FormUpload = ({
         hide ? "hidden" : "flex"
       } justify-between my-1 items-center border-b border-gray-200 py-1`}
     >
-      <div>{label}</div>
+      <div>{data.name}</div>
       <div className="w-[70%]">
         <div className="italic text-xs opacity-80 my-1">
           <FormUploadListFile
             files={files}
             setFiles={setFiles}
-            label={label}
+            data={data}
             setActivity={setActivity}
             pathname={pathname}
           />
         </div>
 
         <FormUploadInputFile
-          setFiles={(newFile: IFileList) => setFiles([...files, newFile])}
-          label={label}
+          setFiles={(newFile: Files) => setFiles([...files, newFile])}
+          data={data}
           setActivity={setActivity}
         />
       </div>
@@ -153,13 +140,13 @@ const FormUploadListFile = ({
   files,
   setFiles,
   setActivity,
-  label,
+  data,
   pathname,
 }: {
-  files: IFileList[];
+  files: Files[];
   setFiles: Function;
   setActivity?: Function;
-  label: string;
+  data: IRootFiles;
   pathname: string;
 }) => {
   const [loading, setLoading] = useState(false);
@@ -171,7 +158,7 @@ const FormUploadListFile = ({
       body: JSON.stringify({ publicId: publicId, resourcetype: "raw" }),
     })
       .then(() => {
-        const filterFiles = files.filter((f) => f.file !== publicId);
+        const filterFiles = files.filter((f) => f.url !== publicId);
         setFiles(filterFiles);
       })
       .catch((err) => {
@@ -184,17 +171,8 @@ const FormUploadListFile = ({
   return (
     <div className="italic text-xs opacity-90">
       {files.map((f) => (
-        <div className="flex gap-2 justify-end items-center" key={f.name}>
-          <div className="w-[85%]">
-            {/* <Paragraph
-              ellipsis={{
-                rows: 1,
-                expandable: "collapsible",
-              }}
-              style={{ fontSize: 12 }}
-            > */}
-            ({f.name}){/* </Paragraph> */}
-          </div>
+        <div className="flex gap-2 justify-end items-center" key={f.url}>
+          <div className="w-[85%]">({f.name})</div>
           {pathname.includes("create") && (
             <Button
               icon={<DeleteOutlined />}
@@ -203,13 +181,13 @@ const FormUploadListFile = ({
               danger
               loading={loading}
               onClick={() => {
-                handleDeleteFiles(f.file);
+                handleDeleteFiles(f.url);
                 if (setActivity) {
-                  const txt = `Hapus ${label} (${f.name})`;
+                  const txt = `Hapus ${data.name} (${f.name})`;
                   setActivity((prev: string[]) => {
                     prev = prev
                       ? prev.filter(
-                          (p) => !p.includes(`Hapus ${label} (${f.name})`)
+                          (p) => !p.includes(`Hapus ${data.name} (${f.name})`)
                         )
                       : [];
                     prev.push(txt);
@@ -228,18 +206,22 @@ const FormUploadListFile = ({
 const FormUploadInputFile = ({
   setFiles,
   setActivity,
-  label,
+  data,
 }: {
   setFiles: Function;
   setActivity?: Function;
-  label: string;
+  data: IRootFiles;
 }) => {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [currFiles, setCurrFiles] = useState<IFileList>({
-    allowedDownload: "",
+  const [currFiles, setCurrFiles] = useState<Files>({
+    id: 0,
+    allowDownload: "",
     name: "",
-    file: "",
+    url: "",
+    createdAt: new Date(),
+    rootFilesId: data.id,
+    permohonanKreditId: null,
   });
   const [tempFile, setTempFile] = useState<File | null>(null);
   const [filePass, setFilePass] = useState<string>();
@@ -251,16 +233,16 @@ const FormUploadInputFile = ({
     setLoading(true);
     await fetch("/api/upload", {
       method: "DELETE",
-      body: JSON.stringify({ publicId: currFiles.file, resourcetype: "raw" }),
+      body: JSON.stringify({ publicId: currFiles.url, resourcetype: "raw" }),
     })
       .then(() => {
-        setCurrFiles({ ...currFiles, file: "", allowedDownload: "" });
+        setCurrFiles({ ...currFiles, url: "" });
         if (setActivity) {
-          const txt = `Hapus ${label} (${currFiles.name})`;
+          const txt = `Hapus ${data.name} (${currFiles.name})`;
           setActivity((prev: string[]) => {
             prev = prev
               ? prev.filter(
-                  (p) => !p.includes(`Hapus ${label} (${currFiles.name})`)
+                  (p) => !p.includes(`Hapus ${data.name} (${currFiles.name})`)
                 )
               : [];
             prev.push(txt);
@@ -316,7 +298,7 @@ const FormUploadInputFile = ({
     formData.append("upload_preset", "ml_default");
     formData.append(
       "folder",
-      `${process.env.NEXT_PUBLIC_APP_FOLDER || ""}/${label}`
+      `${process.env.NEXT_PUBLIC_APP_FOLDER || ""}/${data.name}`
     );
     formData.append("public_id", `${currFiles.name}_${Date.now()}`);
 
@@ -328,16 +310,16 @@ const FormUploadInputFile = ({
       }
     );
 
-    const data = await res.json();
-    if (data.secure_url) {
+    const resData = await res.json();
+    if (resData.secure_url) {
       setCurrFiles({
         ...currFiles,
-        file: data.secure_url,
-        allowedDownload: "",
+        url: resData.secure_url,
+        allowDownload: "",
       });
     } else {
-      notification.error({ message: data.error.message });
-      if (open) setErrMsg(data.error.message);
+      notification.error({ message: resData.error.message });
+      if (open) setErrMsg(resData.error.message);
     }
   };
 
@@ -350,7 +332,7 @@ const FormUploadInputFile = ({
           size="small"
           suffix={
             <>
-              {!currFiles.file ? (
+              {!currFiles.url ? (
                 <Upload {...props}>
                   <Button
                     icon={<CloudUploadOutlined />}
@@ -384,22 +366,28 @@ const FormUploadInputFile = ({
         size="small"
         type="primary"
         style={{ fontSize: 12 }}
-        disabled={!currFiles.file}
+        disabled={!currFiles.url}
         onClick={() => {
           setFiles(currFiles);
           if (setActivity) {
-            const txt = `Upload ${label} (${currFiles.name})`;
+            const txt = `Upload ${data.name} (${currFiles.name})`;
             setActivity((prev: string[]) => {
               prev = prev
                 ? prev.filter(
-                    (p) => !p.includes(`Upload ${label} (${currFiles.name})`)
+                    (p) =>
+                      !p.includes(`Upload ${data.name} (${currFiles.name})`)
                   )
                 : [];
               prev.push(txt);
               return prev;
             });
           }
-          setCurrFiles({ name: "", file: "", allowedDownload: "" });
+          setCurrFiles({
+            ...currFiles,
+            name: "",
+            url: "",
+            createdAt: new Date(),
+          });
         }}
       >
         Add

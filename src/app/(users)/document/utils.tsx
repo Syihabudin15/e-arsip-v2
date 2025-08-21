@@ -4,7 +4,6 @@ import {
   EditActivity,
   IExcelColumn,
   IExcelData,
-  IFileList,
   IPermohonanKredit,
 } from "@/components/IInterfaces";
 import { FilterOption } from "@/components/utils/FormUtils";
@@ -200,14 +199,11 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        return (
-          <>
-            {record.Document.fileIdentitas &&
-              (JSON.parse(record.Document.fileIdentitas) as IFileList[])
-                .map((f) => f.name)
-                .join(",")}
-          </>
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Identitas"
         );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
     {
@@ -225,14 +221,11 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        return (
-          <>
-            {record.Document.fileKepatuhan &&
-              (JSON.parse(record.Document.fileKepatuhan) as IFileList[])
-                .map((f) => f.name)
-                .join(",")}
-          </>
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Kepatuhan"
         );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
     {
@@ -250,14 +243,9 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        return (
-          <>
-            {record.Document.fileMAUK &&
-              (JSON.parse(record.Document.fileMAUK) as IFileList[])
-                .map((f) => f.name)
-                .join(",")}
-          </>
-        );
+        const rootFile = record.RootFiles.filter((p) => p.name === "File MAUK");
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
     {
@@ -275,14 +263,9 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        return (
-          <>
-            {record.Document.fileSLIK &&
-              (JSON.parse(record.Document.fileSLIK) as IFileList[])
-                .map((f) => f.name)
-                .join(",")}
-          </>
-        );
+        const rootFile = record.RootFiles.filter((p) => p.name === "File SLIK");
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
     {
@@ -300,14 +283,11 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        return (
-          <>
-            {record.Document.fileAspekKKeuangan &&
-              (JSON.parse(record.Document.fileAspekKKeuangan) as IFileList[])
-                .map((f) => f.name)
-                .join(",")}
-          </>
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Aspek Keuangan"
         );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
     {
@@ -325,14 +305,11 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        return (
-          <>
-            {record.Document.fileJaminan &&
-              (JSON.parse(record.Document.fileJaminan) as IFileList[])
-                .map((f) => f.name)
-                .join(",")}
-          </>
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Jaminan"
         );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
     {
@@ -350,14 +327,55 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        return (
-          <>
-            {record.Document.fileKredit &&
-              (JSON.parse(record.Document.fileKredit) as IFileList[])
-                .map((f) => f.name)
-                .join(",")}
-          </>
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Kredit"
         );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
+      },
+    },
+    {
+      title: "FILE LEGAL",
+      dataIndex: "filelegal",
+      key: "filelegal",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Legal"
+        );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
+      },
+    },
+    {
+      title: "FILE CUSTODY",
+      dataIndex: "fileCustody",
+      key: "fileCustody",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Custody"
+        );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
     {
@@ -453,7 +471,7 @@ export default function TableDokumen() {
               createdAt: moment(record.createdAt).format("DD/MM/YYYY"),
             } as IExcelData;
             parse.forEach((p) => {
-              rows[p.time] = p.desc; // misalnya "Edit field X"
+              rows[p.time] = `${p.time} : ${p.desc}`; // misalnya "Edit field X"
             });
             return (
               <div className="flex justify-center">

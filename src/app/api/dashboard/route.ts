@@ -16,8 +16,8 @@ export async function GET() {
     topUsers,
   ] = await Promise.all([
     prisma.user.count({ where: { status: true } }),
-    prisma.role.count(),
-    prisma.document.count(),
+    prisma.role.count({ where: { status: true } }),
+    prisma.files.count(),
     prisma.permohonanKredit.count({
       where: { status: true, createdAt: { gte: today } },
     }),
@@ -29,11 +29,15 @@ export async function GET() {
           gte: new Date(new Date().setDate(new Date().getDate() - 7)),
         },
       },
+      orderBy: {
+        createdAt: "desc",
+      },
     }),
     prisma.permohonanKredit.groupBy({
       by: ["createdAt"],
       _count: true,
       where: {
+        status: true,
         createdAt: {
           gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
         },
@@ -80,9 +84,14 @@ export async function GET() {
 
   // Data tabel terbaru
   const lastPermohonan = await prisma.permohonanKredit.findMany({
+    where: { status: true },
     orderBy: { createdAt: "desc" },
     take: 5,
-    include: { JenisPemohon: true, Document: true, User: true },
+    include: {
+      JenisPemohon: true,
+      Files: true,
+      User: true,
+    },
   });
 
   const lastLogs = await prisma.logs.findMany({

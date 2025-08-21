@@ -21,6 +21,6 @@ export async function sendEmail(
     to,
     cc,
     subject,
-    html: `<div style="text-align:justify">${text}</div>`,
+    html: `<div style="text-align:justify;line-height:2">${text}</div>`,
   });
 }

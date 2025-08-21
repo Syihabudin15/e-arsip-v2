@@ -1,7 +1,10 @@
-import { IPermohonanKredit } from "@/components/IInterfaces";
+import {
+  IFiles,
+  IPermohonanKredit,
+  IRootFiles,
+} from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
 import { logActivity } from "@/components/utils/Auth";
-import { StatusAction } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -30,11 +33,6 @@ export const GET = async (req: NextRequest) => {
       },
       include: {
         JenisPemohon: true,
-        Document: {
-          include: {
-            PermohonanAction: { where: { statusAction: StatusAction.PENDING } },
-          },
-        },
         User: true,
       },
       skip,
@@ -53,8 +51,29 @@ export const GET = async (req: NextRequest) => {
       },
     });
 
+    const findRootFile = await prisma.rootFiles.findMany();
+    const newData: IPermohonanKredit[] = [];
+
+    for (const permohonan of find) {
+      const rf: IRootFiles[] = [];
+      for (const root of findRootFile) {
+        const files: IFiles[] = <any>await prisma.files.findMany({
+          where: {
+            rootFilesId: root.id,
+            permohonanKreditId: permohonan.id,
+          },
+          include: {
+            PermohonanAction: true,
+            RootFiles: true,
+          },
+        });
+        rf.push({ ...root, Files: files });
+      }
+      newData.push({ ...permohonan, RootFiles: rf });
+    }
+
     return NextResponse.json(
-      { data: find, total, msg: "OK", status: 200 },
+      { data: newData, total, msg: "OK", status: 200 },
       { status: 200 }
     );
   } catch (err) {
@@ -66,16 +85,19 @@ export const GET = async (req: NextRequest) => {
 export const POST = async (req: NextRequest) => {
   const data: IPermohonanKredit = await req.json();
   try {
-    const { id, JenisPemohon, User, Document, ...permohonan } = data;
-    const { id: docId, PermohonanAction, ...doc } = data.Document;
+    const { id, JenisPemohon, User, RootFiles, ...permohonan } = data;
     await prisma.$transaction(async (tx) => {
-      const saveDoc = await tx.document.create({
-        data: doc,
+      const pk = await tx.permohonanKredit.create({
+        data: permohonan,
       });
-      await tx.permohonanKredit.create({
-        data: { ...permohonan, documentId: saveDoc.id },
-      });
-      return saveDoc;
+      for (const root of RootFiles) {
+        const files = root.Files.map((f) => ({
+          ...f,
+          permohonanKreditId: pk.id,
+        }));
+        await tx.files.createMany({ data: files });
+      }
+      return pk;
     });
     await logActivity(
       req,
@@ -95,11 +117,21 @@ export const POST = async (req: NextRequest) => {
 export const PUT = async (req: NextRequest) => {
   const data: IPermohonanKredit = await req.json();
   try {
-    const { id, JenisPemohon, User, Document, ...permohonan } = data;
-    const { id: docId, PermohonanAction, ...doc } = data.Document;
+    const { id, JenisPemohon, User, RootFiles, ...permohonan } = data;
+    console.log(permohonan);
     await prisma.$transaction([
       prisma.permohonanKredit.update({ where: { id: id }, data: permohonan }),
-      prisma.document.update({ where: { id: docId }, data: doc }),
+      prisma.files.deleteMany({
+        where: { permohonanKreditId: id },
+      }),
+      ...RootFiles.map((rf) =>
+        prisma.files.createMany({
+          data: rf.Files.map((f: any) => {
+            const { PermohonanAction, ...newF } = f;
+            return { ...newF, permohonanKreditId: id };
+          }),
+        })
+      ),
     ]);
     await logActivity(
       req,

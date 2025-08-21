@@ -1,18 +1,12 @@
 "use client";
 
 import { useUser } from "@/components/contexts/UserContext";
-import { IFileList } from "@/components/IInterfaces";
+import { IDescription, IPermohonanAction } from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
 import { MyPDFViewer } from "@/components/utils/LayoutUtil";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import { FormOutlined } from "@ant-design/icons";
-import {
-  Document,
-  PermohonanAction,
-  PermohonanKredit,
-  StatusAction,
-  User,
-} from "@prisma/client";
+import { StatusAction } from "@prisma/client";
 import {
   App,
   Button,
@@ -27,16 +21,6 @@ import {
 import moment from "moment";
 import { useEffect, useState } from "react";
 const { Paragraph } = Typography;
-
-interface IDocument extends Document {
-  PermohonanKredit: PermohonanKredit[];
-}
-
-interface IPermohonanAction extends PermohonanAction {
-  Document: IDocument;
-  Requester: User;
-  Approver: User;
-}
 
 export default function TableDeletes() {
   const [page, setPage] = useState(1);
@@ -125,7 +109,6 @@ export default function TableDeletes() {
         };
       },
       render(value, record, index) {
-        const files = JSON.parse(record.files) as IFileList[];
         return (
           <>
             <Paragraph
@@ -135,7 +118,14 @@ export default function TableDeletes() {
               }}
               style={{ fontSize: 12 }}
             >
-              {record.rootFilename} ({files.map((f) => f.name + ", ")})
+              {record.RootFiles.map((rf) => ({
+                name: rf.name,
+                files: rf.Files.map((rff) => rff.name).join(", "),
+              })).map((r) => (
+                <>
+                  {r.name} ({r.files})<br />
+                </>
+              ))}
             </Paragraph>
           </>
         );
@@ -143,7 +133,7 @@ export default function TableDeletes() {
     },
     {
       title: "DATA KREDIT",
-      dataIndex: "fullname",
+      dataIndex: ["PermohonanKredit", "fullname"],
       key: "fullname",
       className: "text-xs",
       width: 200,
@@ -154,9 +144,6 @@ export default function TableDeletes() {
             fontSize: 12,
           },
         };
-      },
-      render(value, record, index) {
-        return <>{record.Document.PermohonanKredit[0].fullname}</>;
       },
     },
     {
@@ -204,8 +191,9 @@ export default function TableDeletes() {
         };
       },
       render(value, record, index) {
-        const desc: { name: string; date: string; desc: string }[] | null =
-          record.description ? JSON.parse(record.description) : null;
+        const desc: IDescription[] | null = record.description
+          ? JSON.parse(record.description)
+          : null;
         return (
           <>
             <Paragraph
@@ -219,7 +207,8 @@ export default function TableDeletes() {
                 desc.map((d) => (
                   <>
                     {"{"}
-                    {d.name} ({d.date}): {d.desc}.{"}"}
+                    {d.user} ({d.time}): {d.desc}
+                    {"}"}
                     <br />
                     <br />
                   </>
@@ -297,9 +286,6 @@ export default function TableDeletes() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            {/* {hasAccess("delete") && (
-              <DeleteRole data={record} getData={getData} />
-            )} */}
             {hasAccess("update") && (
               <ProsesDeleteFile data={record} getData={getData} />
             )}
@@ -317,20 +303,7 @@ export default function TableDeletes() {
             <h1 className="font-bold text-xl">PERMOHONAN HAPUS FILE</h1>
           </div>
           <div className="flex my-2 gap-2 justify-between">
-            <div className="flex gap-2">
-              {/* {hasAccess("write") && (
-                <Button
-                  icon={<PlusCircleOutlined />}
-                  size="small"
-                  type="primary"
-                  onClick={() =>
-                    window && window.location.replace("/roles/create")
-                  }
-                >
-                  New
-                </Button>
-              )} */}
-            </div>
+            <div className="flex gap-2"></div>
             <div className="w-42">
               <Input.Search
                 size="small"
@@ -370,7 +343,6 @@ const ProsesDeleteFile = ({
 }) => {
   const [open, setOpen] = useState(false);
   const user = useUser();
-  const { hasAccess } = useAccess("/request/delete");
   const [desc, setDesc] = useState<string>();
   const [status, setStatus] = useState<StatusAction>();
   const [loading, setLoading] = useState(false);
@@ -379,10 +351,12 @@ const ProsesDeleteFile = ({
   const handleSubmit = async () => {
     setLoading(true);
     if (desc) {
-      const currDesc = data.description ? JSON.parse(data.description) : [];
+      const currDesc: IDescription[] = data.description
+        ? JSON.parse(data.description)
+        : [];
       currDesc.push({
-        name: user?.fullname,
-        date: moment().format("DD/MM/YYYY HH:mm"),
+        user: user?.fullname || "",
+        time: moment().format("DD/MM/YYYY HH:mm"),
         desc,
       });
       data.description = JSON.stringify(currDesc);
@@ -390,10 +364,9 @@ const ProsesDeleteFile = ({
     data.statusAction = status || StatusAction.PENDING;
     data.approverId = user?.id || null;
 
-    const { Requester, Approver, Document, ...savedData } = data;
     await fetch("/api/request", {
       method: "PUT",
-      body: JSON.stringify(savedData),
+      body: JSON.stringify(data),
     })
       .then((res) => res.json())
       .then(async (res) => {
@@ -412,11 +385,15 @@ const ProsesDeleteFile = ({
               subject: `Proses Permohonan Hapus File`,
               description: `${
                 user?.fullname
-              } Berhasil melakukan proses pada data permohonan hapus file ${
-                data.rootFilename
-              }. sekarang data data tersebut duah dihapus dari database. <br/> Berikut detail dari data data yang telah dihapus ${JSON.stringify(
-                data.files
-              )}`,
+              } Berhasil melakukan proses hapus file pada data permohonan ${
+                data.PermohonanKredit.fullname
+              } dengan status ${data.statusAction}. ${
+                data.statusAction === StatusAction.APPROVED &&
+                "sekarang data data tersebut telah dihapus dari database. <br/> Berikut detail dari data data yang telah dihapus :"
+              } <br/><br/> ${data.RootFiles.map((rf) => ({
+                name: rf.name,
+                files: rf.Files.map((rff) => rff.name).join(", "),
+              })).map((r) => `${r.name} (${r.files})<br />`)}`,
             }),
           });
         }
@@ -443,31 +420,35 @@ const ProsesDeleteFile = ({
         width={window.innerWidth > 600 ? "90vw" : "95vw"}
         style={{ top: 20 }}
         footer={[]}
+        loading={loading}
       >
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="w-full sm:flex-2">
+          <div className="w-full sm:flex-1">
             <Tabs
               size="small"
               type="card"
-              // tabBarStyle={{
-              //   ...(window && window.innerWidth > 600 && { width: 80 }),
-              // }}
               items={[
-                ...(JSON.parse(data.files) as IFileList[]).map((f) => ({
+                ...data.RootFiles.flatMap((f) => f.Files).map((f) => ({
                   label: f.name,
                   key: f.name + Date.now(),
                   children: (
                     <div className="h-[72vh]">
                       <MyPDFViewer
-                        fileUrl={f.file}
+                        fileUrl={f.url}
                         download={(() => {
-                          if (!f.allowedDownload) return false;
-                          const filter = f.allowedDownload
+                          const filter = f.allowDownload
                             .split(",")
-                            .filter((i) => user && parseInt(i) === user.id);
-                          if (hasAccess("download") || filter.length !== 0) {
+                            .map(Number)
+                            .includes(user?.id || 0);
+                          if (
+                            ["ADMINISTRATOR", "DEVELOPER"].includes(
+                              user?.role.roleName || ""
+                            ) ||
+                            filter
+                          ) {
                             return true;
                           }
+                          if (!f.allowDownload) return false;
                           return false;
                         })()}
                       />
@@ -490,26 +471,25 @@ const ProsesDeleteFile = ({
               />
               <FormInput
                 label="DATA KREDIT"
-                value={data.Document.PermohonanKredit[0].fullname}
+                value={data.PermohonanKredit.fullname}
                 disable
               />
-              <FormInput label="NAMA FILE" value={data.rootFilename} disable />
-              <FormInput
-                label="ISI FILE"
-                value={(() => {
-                  const json = JSON.parse(data.files) as IFileList[];
-                  return json.map((v) => v.name).join(", ");
-                })()}
-                disable
-              />
+              {data.RootFiles.map((rf) => (
+                <FormInput
+                  label={rf.name}
+                  value={rf.Files.map((f) => f.name).join(",")}
+                  disable
+                  key={rf.id}
+                />
+              ))}
               {data.description &&
                 JSON.parse(data.description).map(
                   (
-                    d: { name: string; date: string; desc: string },
+                    d: { user: string; time: string; desc: string },
                     i: number
                   ) => (
                     <FormInput
-                      label={`${d.name} (${d.date})`}
+                      label={`${d.user} (${d.time})`}
                       type="area"
                       value={d.desc}
                       disable
@@ -552,7 +532,9 @@ const ProsesDeleteFile = ({
                   <Button
                     type="primary"
                     loading={loading}
-                    disabled={!status}
+                    disabled={
+                      !status || data.statusAction === StatusAction.APPROVED
+                    }
                     onClick={() => handleSubmit()}
                   >
                     Submit

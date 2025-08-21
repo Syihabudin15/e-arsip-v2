@@ -2,8 +2,8 @@
 
 import {
   IDescription,
-  IFileList,
   IPermohonanKredit,
+  IRootFiles,
   IUser,
 } from "@/components/IInterfaces";
 import { FilterOption, FormInput } from "@/components/utils/FormUtils";
@@ -408,199 +408,23 @@ export const DetailPermohonan = ({ data }: { data: IPermohonanKredit }) => {
           <div className="w-full sm:flex-1 h-full overflow-auto">
             <DataPemohon data={data} />
           </div>
-          <div className="w-full sm:flex-1/4 sm:border-l rounded">
+          <div className="w-full sm:flex-1 overflow-auto sm:border-l rounded">
             <Tabs
-              items={[
-                {
-                  label: `Identitas`,
-                  key: "identitas",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileIdentitas ? (
-                        <div className="flex justify-center items-center">
-                          Belum ada data diUpload
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileIdentitas || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `SLIK`,
-                  key: "slik",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileSLIK ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileSLIK || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `Jaminan`,
-                  key: "jaminan",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileJaminan ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileJaminan || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `Kredit`,
-                  key: "kredit",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileKredit ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileKredit || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `Aspek Keuangan`,
-                  key: "aspekKeuangan",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileAspekKKeuangan ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileAspekKKeuangan || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `MAUK`,
-                  key: "mauk",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileMAUK ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileMAUK || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `Kepatuhan`,
-                  key: "kepatuhan",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileKepatuhan ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileKepatuhan || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `Legal`,
-                  key: "legal",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileLegal ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileLegal || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  label: `Custody`,
-                  key: "custody",
-                  children: (
-                    <div className="h-[70vh]">
-                      {!data.Document.fileCustody ? (
-                        <div className="text-center italic">
-                          Belum ada data diUpload!
-                        </div>
-                      ) : (
-                        <BerkasBerkas
-                          files={
-                            JSON.parse(
-                              data.Document.fileCustody || "[]"
-                            ) as IFileList[]
-                          }
-                        />
-                      )}
-                    </div>
-                  ),
-                },
-              ]}
+              items={data.RootFiles.map((d) => ({
+                label: d.name,
+                key: d.id.toString(),
+                children: (
+                  <div className="h-[70vh]">
+                    {d.Files.length === 0 ? (
+                      <div className="flex justify-center items-center">
+                        Belum ada data diUpload
+                      </div>
+                    ) : (
+                      <BerkasBerkas files={d} />
+                    )}
+                  </div>
+                ),
+              }))}
               type="card"
               className="h-full"
               size="small"
@@ -702,8 +526,8 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
             <FormInput
               type="area"
               disable
-              label={`${d.fullname} (${d.date})`}
-              value={d.lastValue}
+              label={`${d.user} (${d.time})`}
+              value={d.desc}
               onChange={() => {}}
               key={i}
             />
@@ -713,14 +537,14 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
   );
 };
 
-const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
+const BerkasBerkas = ({ files }: { files: IRootFiles }) => {
   const { access, hasAccess } = useAccess("/permohonan-kredit");
   const user = useUser();
   const [allFile, setAllFile] = useState<string>();
 
   useEffect(() => {
     (async () => {
-      const result = await mergePDF(files.map((f) => f.file));
+      const result = await mergePDF(files.Files.map((f) => f.url));
       if (!result) return;
       setAllFile(result);
     })();
@@ -743,7 +567,12 @@ const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
                   <div className="h-[70vh]">
                     <MyPDFViewer
                       fileUrl={allFile}
-                      download={hasAccess("download")}
+                      download={
+                        (user && user.role.roleName === "DEVELOPER") ||
+                        user?.role.roleName === "ADMINISTRATOR"
+                          ? true
+                          : false
+                      }
                     />
                   </div>
                 )}
@@ -751,21 +580,27 @@ const BerkasBerkas = ({ files }: { files: IFileList[] }) => {
             ),
           },
           ...(files &&
-            files.map((f) => ({
+            files.Files.map((f) => ({
               label: f.name,
               key: f.name + Date.now(),
               children: (
                 <div className="h-[70vh]">
                   <MyPDFViewer
-                    fileUrl={f.file}
+                    fileUrl={f.url}
                     download={(() => {
-                      if (!f.allowedDownload) return false;
-                      const filter = f.allowedDownload
+                      const filter = f.allowDownload
                         .split(",")
-                        .filter((i) => user && parseInt(i) === user.id);
-                      if (hasAccess("download") || filter.length !== 0) {
+                        .map(Number)
+                        .includes(user?.id || 0);
+                      if (
+                        ["ADMINISTRATOR", "DEVELOPER"].includes(
+                          user?.role.roleName || ""
+                        ) ||
+                        filter
+                      ) {
                         return true;
                       }
+                      if (!f.allowDownload) return false;
                       return false;
                     })()}
                   />

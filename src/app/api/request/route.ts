@@ -1,15 +1,19 @@
-// import { SelectedFIles } from "@/app/(users)/permohonan-kredit/delete/[id]/util";
 import cloudinary from "@/components/Cloudinary";
-import { IFileList } from "@/components/IInterfaces";
+import { IPermohonanAction, IRootFiles } from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
 import { logActivity } from "@/components/utils/Auth";
-import { PermohonanAction, StatusAction } from "@prisma/client";
+import { ENeedAction, Files, StatusAction } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
   const data = await req.json();
   try {
-    const saved = await prisma.permohonanAction.createMany({ data });
+    const saved = await prisma.permohonanAction.create({
+      data: {
+        ...data,
+        Files: { connect: data.Files.map((d: Files) => ({ id: d.id })) },
+      },
+    });
     await logActivity(
       req,
       `Permohonan ${data.action} File`,
@@ -17,8 +21,8 @@ export const POST = async (req: NextRequest) => {
       "permohonanAction",
       JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
-      `Berhasil mengajukan permohonan ${data[0].action} file ` +
-        data.map((d: any) => d.rootFilename).join(",")
+      `Berhasil mengajukan permohonan ${data.action} file ` +
+        data.Files.map((d: any) => d.name).join(",")
     );
     return NextResponse.json(
       { data: saved, msg: "OK", status: 201 },
@@ -28,13 +32,13 @@ export const POST = async (req: NextRequest) => {
     console.log(err);
     await logActivity(
       req,
-      `Permohonan ${data[0].action} File Gagal`,
+      `Permohonan ${data.action} File Gagal`,
       "POST",
       "permohonanAction",
       JSON.stringify(data),
       JSON.stringify({ status: 500, msg: "Server Error" }),
       `Gagal mengajukan permohonan ${data.action} file ` +
-        data.map((d: any) => d.rootFilename).join(",")
+        data.Files.map((d: any) => d.name).join(",")
     );
     return NextResponse.json(
       { msg: "Server Error", status: 500 },
@@ -50,7 +54,7 @@ export const GET = async (req: NextRequest) => {
   const status: StatusAction | undefined = <any>(
     req.nextUrl.searchParams.get("status")
   );
-  const action: string | undefined = <any>(
+  const action: ENeedAction | undefined = <any>(
     req.nextUrl.searchParams.get("action")
   );
   const page: number = parseInt(req.nextUrl.searchParams.get("page") || "1");
@@ -62,67 +66,68 @@ export const GET = async (req: NextRequest) => {
     const find = await prisma.permohonanAction.findMany({
       where: {
         ...(search && {
-          OR: [
-            { rootFilename: { contains: search } },
-            {
-              Document: {
-                PermohonanKredit: {
-                  some: {
-                    OR: [
-                      { fullname: { contains: search } },
-                      { NIK: { contains: search } },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
+          PermohonanKredit: {
+            OR: [
+              { fullname: { contains: search } },
+              { NIK: { contains: search } },
+              { accountNumber: { contains: search } },
+            ],
+          },
         }),
-
         ...(status && { statusAction: status }),
         ...(action && { action: action }),
       },
       include: {
-        Document: {
+        Files: {
           include: {
             PermohonanKredit: true,
+            RootFiles: true,
+            PermohonanAction: true,
           },
         },
         Requester: true,
         Approver: true,
+        PermohonanKredit: true,
       },
-      skip,
       take: pageSize,
-      orderBy: {
-        createdAt: "desc",
-      },
+      skip: skip,
+      orderBy: { createdAt: "desc" },
     });
     const total = await prisma.permohonanAction.count({
       where: {
         ...(search && {
-          OR: [
-            { rootFilename: { contains: search } },
-            {
-              Document: {
-                PermohonanKredit: {
-                  some: {
-                    OR: [
-                      { fullname: { contains: search } },
-                      { NIK: { contains: search } },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
+          PermohonanKredit: {
+            OR: [
+              { fullname: { contains: search } },
+              { NIK: { contains: search } },
+              { accountNumber: { contains: search } },
+            ],
+          },
         }),
         ...(status && { statusAction: status }),
         ...(action && { action: action }),
       },
     });
 
+    const newData: IPermohonanAction[] = <any>find.map((f) => {
+      let root: IRootFiles[] = [];
+      for (const files of f.Files) {
+        const find = root.filter((rf) => rf.id === files.rootFilesId);
+        if (find.length === 0) {
+          root.push({
+            id: files.RootFiles.id,
+            name: files.RootFiles.name,
+            Files: [files],
+          });
+        } else {
+          root = root.map((r) => ({ ...r, Files: [...r.Files, files] }));
+        }
+      }
+      return { ...f, RootFiles: root };
+    });
+
     return NextResponse.json(
-      { data: find, total, msg: "OK", status: 200 },
+      { data: newData, total, msg: "OK", status: 200 },
       { status: 200 }
     );
   } catch (err) {
@@ -132,171 +137,85 @@ export const GET = async (req: NextRequest) => {
 };
 
 export const PUT = async (req: NextRequest) => {
-  const data: PermohonanAction = await req.json();
+  const data: IPermohonanAction = await req.json();
   try {
-    const rootFilename = data.rootFilename
-      .toLowerCase()
-      .replace(/[^a-zA-Z0-9 ]/g, "") // buang karakter aneh
-      .replace(/ (.)/g, (match, group1) => group1.toUpperCase());
-    // Updated Data
-    const { id, ...updatedData } = data;
-
-    if (data.action === "DELETE") {
-      if (data.statusAction === StatusAction.APPROVED) {
-        const findDoc = await prisma.document.findFirst({
-          where: { id: data.documentId },
-        });
-        if (!findDoc) {
-          return NextResponse.json(
-            { msg: "Document tidak ditemukan!", status: 400 },
-            { status: 400 }
-          );
-        }
-        const findDocFiles: IFileList[] = JSON.parse(
-          (findDoc as any)[rootFilename]
-        );
-        const mapping: IFileList[] = JSON.parse(data.files);
-        const filtered: IFileList[] = findDocFiles.filter(
-          (docFile) =>
-            !mapping.some(
-              (mapFile) => mapFile.file === docFile.file // bandingkan field unik
-            )
-        );
-        // hard update findDoc
-        (findDoc as any)[rootFilename] = JSON.stringify(filtered);
-        // Save to DB
-        const { id: idDoc, ...updatedDoc } = findDoc;
+    const {
+      id,
+      Approver,
+      Requester,
+      PermohonanKredit,
+      RootFiles,
+      ...savedData
+    } = data;
+    const Files = RootFiles.flatMap((r) => r.Files);
+    if (data.statusAction === StatusAction.APPROVED) {
+      await prisma.permohonanAction.update({
+        where: { id: id },
+        data: {
+          statusAction: data.statusAction,
+          description: data.description,
+          approverId: data.approverId,
+        },
+      });
+      if (data.action === ENeedAction.DOWNLOAD) {
         await prisma.$transaction([
-          prisma.document.update({
-            where: { id: findDoc.id },
-            data: updatedDoc,
-          }),
-          prisma.permohonanAction.update({
-            where: { id: data.id },
-            data: { ...updatedData, updatedAt: new Date() },
-          }),
+          ...Files.map((rf) =>
+            prisma.files.update({
+              where: { id: rf.id },
+              data: {
+                allowDownload: rf.allowDownload + `${data.requesterId},`,
+              },
+            })
+          ),
         ]);
-        for (const file of mapping) {
-          await cloudinary.uploader.destroy(file.file, {
-            resource_type: "raw",
-          });
-        }
-        await logActivity(
-          req,
-          "Permohonan Hapus File",
-          "PUT",
-          "permohonanAction",
-          JSON.stringify(data),
-          JSON.stringify({ status: 201, msg: "OK" }),
-          "Berhasil proses permohonan hapus file " + data.rootFilename
-        );
-        return NextResponse.json(
-          { data: findDoc, msg: "OK", status: 201 },
-          { status: 201 }
-        );
       } else {
-        const saved = await prisma.permohonanAction.update({
-          where: { id: data.id },
-          data: { ...updatedData, updatedAt: new Date() },
-        });
-        await logActivity(
-          req,
-          "Permohonan Hapus File",
-          "PUT",
-          "permohonanAction",
-          JSON.stringify(data),
-          JSON.stringify({ status: 201, msg: "OK" }),
-          "Berhasil proses permohonan hapus file " + data.rootFilename
-        );
-        return NextResponse.json(
-          { data: saved, msg: "OK", status: 201 },
-          { status: 201 }
-        );
-      }
-    } else {
-      if (data.statusAction === "APPROVED") {
-        const findDoc = await prisma.document.findFirst({
-          where: { id: data.documentId },
-        });
-        if (!findDoc) {
-          return NextResponse.json(
-            { msg: "Document tidak ditemukan!", status: 400 },
-            { status: 400 }
-          );
-        }
-        const findDocFiles: IFileList[] = JSON.parse(
-          (findDoc as any)[rootFilename]
-        );
-        const mapping: IFileList[] = JSON.parse(data.files);
-        const filtered: IFileList[] = findDocFiles.map((docFile) => {
-          if (
-            mapping.some(
-              (mapFile) => mapFile.file === docFile.file // bandingkan field unik
-            )
-          ) {
-            docFile.allowedDownload =
-              docFile.allowedDownload + `,${data.requesterId}`;
-          }
-          return docFile;
-        });
-        // hard update findDoc
-        (findDoc as any)[rootFilename] = JSON.stringify(filtered);
-        // Save to DB
-        const { id: idDoc, ...updatedDoc } = findDoc;
         await prisma.$transaction([
-          prisma.document.update({
-            where: { id: findDoc.id },
-            data: updatedDoc,
-          }),
-          prisma.permohonanAction.update({
-            where: { id: data.id },
-            data: { ...updatedData, updatedAt: new Date() },
-          }),
+          ...Files.map((rf) =>
+            prisma.files.update({
+              where: { id: rf.id },
+              data: {
+                permohonanKreditId: null,
+              },
+            })
+          ),
         ]);
-        await logActivity(
-          req,
-          "Permohonan Download File",
-          "PUT",
-          "permohonanAction",
-          JSON.stringify(data),
-          JSON.stringify({ status: 201, msg: "OK" }),
-          "Berhasil proses permohonan Download file " + data.rootFilename
-        );
-        return NextResponse.json(
-          { data: findDoc, msg: "OK", status: 201 },
-          { status: 201 }
-        );
-      } else {
-        const saved = await prisma.permohonanAction.update({
-          where: { id: data.id },
-          data: { ...updatedData, updatedAt: new Date() },
-        });
-        await logActivity(
-          req,
-          "Permohonan Download File",
-          "PUT",
-          "permohonanAction",
-          JSON.stringify(data),
-          JSON.stringify({ status: 201, msg: "OK" }),
-          "Berhasil proses permohonan download file " + data.rootFilename
-        );
-        return NextResponse.json(
-          { data: saved, msg: "OK", status: 201 },
-          { status: 201 }
-        );
+        for (const file of Files) {
+          await cloudinary.uploader.destroy(file.url);
+        }
       }
+      await logActivity(
+        req,
+        `Proses Permohonan ${data.action} File`,
+        "PUT",
+        "permohonanAction",
+        JSON.stringify(data),
+        JSON.stringify({ status: 201, msg: "OK" }),
+        `Berhasil proses pengajuan ${data.action} file ${data.RootFiles.flatMap(
+          (d: any) => d.name
+        ).join(",")} (${Files.map((f) => f.name).join(",")})`
+      );
+      return NextResponse.json({ data: null, status: 201 }, { status: 201 });
     }
-  } catch (err) {
-    console.log(err);
+
+    if ("Files" in savedData) delete savedData.Files;
+    await prisma.permohonanAction.update({
+      where: { id: id },
+      data: savedData,
+    });
     await logActivity(
       req,
-      `Permohnan ${data.action} File`,
+      `Proses Permohonan ${data.action} File`,
       "PUT",
       "permohonanAction",
       JSON.stringify(data),
-      JSON.stringify({ status: 500, msg: "Server Error" }),
-      `Gagal proses permohonan ${data.action} file ` + data.rootFilename
+      JSON.stringify({ status: 201, msg: "OK" }),
+      `Berhasil proses pengajuan ${data.action} file ${data.RootFiles.flatMap(
+        (d: any) => d.name
+      ).join(",")} (${Files.map((f) => f.name).join(",")})`
     );
+    return NextResponse.json({ data: null, status: 201 }, { status: 201 });
+  } catch (err) {
+    console.log(err);
     return NextResponse.json(
       { msg: "Server Error", status: 500 },
       { status: 500 }

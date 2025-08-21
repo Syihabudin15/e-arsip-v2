@@ -19,6 +19,11 @@ enum StatusAction {
   REJECTED
 }
 
+enum ENeedAction {
+  DOWNLOAD
+  DELETE
+}
+
 model Role {
   id         Int    @id @default(autoincrement())
   roleName   String @unique
@@ -71,53 +76,61 @@ model PermohonanKredit {
   description   String? @db.Text
   activity      String? @db.Text
 
-  status         Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @default(now())
-  JenisPemohon   JenisPemohon @relation(fields: [jenisPemohonId], references: [id])
-  jenisPemohonId Int
-  User           User         @relation(fields: [userId], references: [id])
-  userId         Int
-  Document       Document     @relation(fields: [documentId], references: [id])
-  documentId     Int
+  status           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now())
+  JenisPemohon     JenisPemohon       @relation(fields: [jenisPemohonId], references: [id])
+  User             User               @relation(fields: [userId], references: [id])
+  jenisPemohonId   Int
+  userId           Int
+  Files            Files[]
+  PermohonanAction PermohonanAction[]
 
   @@index([jenisPemohonId])
   @@index([createdAt])
   @@index([userId])
 }
 
-model Document {
-  id                 Int                @id @default(autoincrement())
-  fileIdentitas      String?            @db.Text
-  fileSLIK           String?            @db.Text
-  fileJaminan        String?            @db.Text
-  fileKredit         String?            @db.Text
-  fileAspekKKeuangan String?            @db.Text
-  fileMAUK           String?            @db.Text
-  fileKepatuhan      String?            @db.Text
-  fileLegal          String?            @db.Text
-  fileCustody        String?            @db.Text
-  PermohonanAction   PermohonanAction[]
-  PermohonanKredit   PermohonanKredit[]
+model RootFiles {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  Files Files[]
+}
+
+model Files {
+  id            Int    @id @default(autoincrement())
+  name          String
+  url           String
+  allowDownload String @db.Text
+
+  createdAt          DateTime          @default(now())
+  RootFiles          RootFiles         @relation(fields: [rootFilesId], references: [id])
+  PermohonanKredit   PermohonanKredit? @relation(fields: [permohonanKreditId], references: [id])
+  rootFilesId        Int
+  permohonanKreditId Int?
+
+  PermohonanAction PermohonanAction[]
 }
 
 model PermohonanAction {
   id           Int          @id @default(autoincrement())
-  rootFilename String
-  files        String       @db.Text
   statusAction StatusAction @default(PENDING)
   description  String?      @db.Text
-  action       String
+  action       ENeedAction
 
-  status      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
-  Requester   User     @relation("RequesterRelation", fields: [requesterId], references: [id])
-  requesterId Int
-  Approver    User?    @relation("ApproverRelation", fields: [approverId], references: [id])
-  approverId  Int?
-  Document    Document @relation(fields: [documentId], references: [id])
-  documentId  Int
+  status           Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(now())
+  Requester        User             @relation("RequesterRelation", fields: [requesterId], references: [id])
+  Approver         User?            @relation("ApproverRelation", fields: [approverId], references: [id])
+  PermohonanKredit PermohonanKredit @relation(fields: [permohonanKreditId], references: [id])
+
+  Files Files[] // banyak Files
+
+  requesterId        Int
+  approverId         Int?
+  permohonanKreditId Int  @default(1)
 }
 
 model Logs {

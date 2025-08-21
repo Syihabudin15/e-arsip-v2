@@ -24,16 +24,6 @@ export default function DashboardMaster() {
 
   const { cards, charts, tables } = data;
 
-  // const logData = charts.logsPerDay.map((l: any) => ({
-  //   date: l.createdAt,
-  //   count: l._count,
-  // }));
-
-  // const pengajuanData = charts.pengajuanPerBulan.map((p: any) => ({
-  //   date: new Date(p.createdAt).toLocaleDateString(),
-  //   count: p._count,
-  // }));
-
   const columnsPermohonan = [
     {
       title: "MARKETING",
@@ -224,7 +214,7 @@ export default function DashboardMaster() {
         </Col>
         <Col span={6} xs={12} md={8} lg={6}>
           <Card
-            title="Total Permohnan"
+            title="Total Files"
             styles={{
               header: {
                 background: "linear-gradient(135deg, #3b82f6, #9333ea)",

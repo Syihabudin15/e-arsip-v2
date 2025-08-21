@@ -409,7 +409,7 @@ export default function TableLogs() {
                   agent: d.userAgent,
                   postData: d.sendData,
                   return: d.returnStatus,
-                  user: d.User.fullname,
+                  user: d.User && d.User.fullname,
                   createdAt: moment(d.createdAt).format("DD/MM/YYYY"),
                 }))}
               />

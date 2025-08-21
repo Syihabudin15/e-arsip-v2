@@ -2,13 +2,13 @@ import { useUser } from "@/components/contexts/UserContext";
 import {
   EditActivity,
   IDescription,
+  IFiles,
   IPermohonanKredit,
 } from "@/components/IInterfaces";
 import { FormInput, FormUpload } from "@/components/utils/FormUtils";
-import { JenisPemohon, User } from "@prisma/client";
+import { Files, JenisPemohon, RootFiles, User } from "@prisma/client";
 import { App, Button, Select, Spin } from "antd";
 import moment from "moment";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function CreatePermohonanKredit({
@@ -16,17 +16,20 @@ export default function CreatePermohonanKredit({
 }: {
   record?: IPermohonanKredit;
 }) {
-  const [data, setData] = useState<IPermohonanKredit>(
-    record || defaultPermohonan
-  );
   const [jeniss, setJenis] = useState<JenisPemohon[]>([]);
   const [userss, setUserss] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [tempDesc, setTempDesc] = useState<string>();
   const [activity, setActivity] = useState<string[]>([]);
   const user = useUser();
+  const [data, setData] = useState<IPermohonanKredit>(
+    record || {
+      ...defaultPermohonan,
+      userId: user ? user.id : defaultPermohonan.userId,
+      User: user ? user : defaultPermohonan.User,
+    }
+  );
   const { modal } = App.useApp();
-  const pathname = usePathname();
 
   useEffect(() => {
     setLoading(true);
@@ -45,13 +48,22 @@ export default function CreatePermohonanKredit({
             setUserss(res.data.map((d: User) => ({ ...d, key: d.id })));
           }
         });
+      if (!record) {
+        await fetch("/api/rootfiles")
+          .then((res) => res.json())
+          .then((res) => {
+            if (res.status === 200) {
+              setData({
+                ...data,
+                RootFiles: res.data.map((r: RootFiles) => ({
+                  ...r,
+                  Files: [],
+                })),
+              });
+            }
+          });
+      }
     })();
-    setActivity([]);
-    setTempDesc(undefined);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
     if (!record && user) {
       setData({
         ...data,
@@ -59,7 +71,10 @@ export default function CreatePermohonanKredit({
         User: user,
       });
     }
-  }, [user]);
+    setActivity([]);
+    setTempDesc(undefined);
+    setLoading(false);
+  }, []);
 
   const handleSubmit = async () => {
     if (!data.JenisPemohon.name || !data.User.fullname)
@@ -83,11 +98,9 @@ export default function CreatePermohonanKredit({
         ? (JSON.parse(data.description) as IDescription[])
         : [];
       temp.push({
-        date: moment().format("DD/MM/YYYY HH:mm"),
-        prevValue: tempDesc,
-        lastValue: tempDesc,
-        fullname: user?.fullname || "",
-        userId: user?.id || 0,
+        time: moment().format("DD/MM/YYYY HH:mm"),
+        desc: tempDesc,
+        user: user?.fullname || "",
       });
       data.description = JSON.stringify(temp);
     }
@@ -112,9 +125,11 @@ export default function CreatePermohonanKredit({
                 record ? "update" : "menambahkan"
               } data Permohonan Kredit ${!record ? "baru" : ""} ${
                 data.fullname
-              }`,
+              }<br/> ${activity && activity.join(",")}`,
             }),
           });
+          setTempDesc(undefined);
+          setActivity([]);
         } else {
           modal.error({
             title: "ERROR",
@@ -237,11 +252,11 @@ export default function CreatePermohonanKredit({
             <Select
               options={userss.map((u) => ({ label: u.fullname, value: u.id }))}
               style={{ width: "100%" }}
-              value={data.userId || undefined}
+              value={data.userId}
               disabled={user && user.role.roleName === "MARKETING"}
               onChange={(e) => {
                 const find = userss.filter((u) => u.id === e);
-                if (find.length === 1)
+                if (find.length === 0)
                   return alert("Data Marketing tidak valid");
 
                 setData({
@@ -302,32 +317,24 @@ export default function CreatePermohonanKredit({
               (d: IDescription, i: number) => (
                 <FormInput
                   type="area"
-                  label={`${i + 1} (${d.date})`}
-                  value={d.lastValue}
+                  label={`${d.user} (${d.time})`}
+                  value={d.desc}
                   onChange={(e: string) => {
                     const prevDesc = JSON.parse(
-                      record ? record.description || "[]" : "[]"
+                      data.description || "[]"
                     ) as IDescription[];
-                    setData((prev) => {
-                      const t = JSON.parse(
-                        prev.description || "[]"
-                      ) as IDescription[];
-                      t[i].prevValue = prevDesc[i].lastValue; // update desc sesuai index
-                      t[i].lastValue = e; // update desc sesuai index
-                      return {
-                        ...prev,
-                        description: JSON.stringify(t), // simpan kembali ke string
-                      };
+                    prevDesc[i].desc = e;
+                    setData({
+                      ...data,
+                      description: JSON.stringify(prevDesc), // simpan kembali ke string
                     });
                     if (record) {
-                      const txt = `Edit Keterangan [index(${i}) ${d.date}]: (${prevDesc[i].lastValue} to ${e})`;
+                      const txt = `Edit Keterangan [index(${i})]`;
                       setActivity((prev) => {
                         prev = prev
                           ? prev.filter(
                               (p) =>
-                                !p.includes(
-                                  `Edit Keterangan [index(${i}) ${d.date}]`
-                                )
+                                !p.includes(`Edit Keterangan [index(${i})]`)
                             )
                           : [];
                         prev.push(txt);
@@ -367,9 +374,27 @@ export default function CreatePermohonanKredit({
             <p>BERKAS - BERKAS</p>
           </div>
           <div>
-            <FormUpload
-              label="File Identitas"
-              value={data.Document.fileIdentitas}
+            {data.RootFiles.map((d) => (
+              <FormUpload
+                key={d.id}
+                data={d}
+                setChange={(e: IFiles[]) =>
+                  setData((prev) => {
+                    prev.RootFiles.map((p) => {
+                      if (p.name === d.name) {
+                        p.Files = e;
+                      }
+                      return p;
+                    });
+                    return prev;
+                  })
+                }
+                setActivity={record && setActivity}
+              />
+            ))}
+            {/* <FormUpload
+              data="File Identitas"
+              value={data.RootFiles}
               setChange={(e: string) =>
                 setData({
                   ...data,
@@ -492,7 +517,7 @@ export default function CreatePermohonanKredit({
                 })
               }
               setActivity={record && setActivity}
-            />
+            /> */}
           </div>
           <div className="flex justify-end mt-5 mb-2 gap-4">
             <Button
@@ -531,7 +556,6 @@ const defaultPermohonan: IPermohonanKredit = {
   createdAt: new Date(),
   updatedAt: new Date(),
   jenisPemohonId: 0,
-  documentId: 0,
   accountNumber: "",
   description: "",
   activity: "",
@@ -544,20 +568,6 @@ const defaultPermohonan: IPermohonanKredit = {
     status: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-  },
-  Document: {
-    id: 0,
-
-    fileIdentitas: "",
-    fileSLIK: "",
-    fileJaminan: "",
-    fileKredit: "",
-    fileAspekKKeuangan: "",
-    fileMAUK: "",
-    fileKepatuhan: "",
-    fileLegal: "",
-    fileCustody: "",
-    PermohonanAction: [],
   },
   User: {
     id: 0,
@@ -572,4 +582,5 @@ const defaultPermohonan: IPermohonanKredit = {
     updatedAt: new Date(),
     roleId: 0,
   },
+  RootFiles: [],
 };

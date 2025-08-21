@@ -1,38 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { IFileList, IPermohonanKredit } from "@/components/IInterfaces";
+import {
+  IFiles,
+  IPermohonanKredit,
+  IRootFiles,
+} from "@/components/IInterfaces";
 import { FileOutlined, LoadingOutlined } from "@ant-design/icons";
 import { App, Button, Checkbox, Modal, Spin } from "antd";
+import { FormInput } from "@/components/utils/FormUtils";
+import dynamic from "next/dynamic";
+import { ENeedAction, StatusAction } from "@prisma/client";
 import { useUser } from "@/components/contexts/UserContext";
 import moment from "moment";
-import { FormInput } from "@/components/utils/FormUtils";
-import { PermohonanAction } from "@prisma/client";
-import { MyPDFViewer } from "@/components/utils/LayoutUtil";
-
-export interface SelectedFIles {
-  rootFilename: string;
-  files: IFileList[];
-}
+const MyPDFViewer = dynamic(() =>
+  import("@/components/utils/LayoutUtil").then((d) => d.MyPDFViewer)
+);
 
 export default function DeleteFiles({ id }: { id: number }) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<IPermohonanKredit>();
-  const [selected, setSelected] = useState<SelectedFIles[]>([
-    { rootFilename: "FILE IDENTITAS", files: [] },
-    { rootFilename: "FILE KEPATUHAN", files: [] },
-    { rootFilename: "FILE MAUK", files: [] },
-    { rootFilename: "FILE ASPEK KEUANGAN", files: [] },
-    { rootFilename: "FILE SLIK", files: [] },
-    { rootFilename: "FILE JAMINAN", files: [] },
-    { rootFilename: "FILE KREDIT", files: [] },
-    { rootFilename: "FILE LEGAL", files: [] },
-    { rootFilename: "FILE CUSTODY", files: [] },
-  ]);
   const [open, setOpen] = useState(false);
   const [desc, setDesc] = useState<string>();
-  const user = useUser();
+  const [tempData, setTempData] = useState<IRootFiles[]>([]);
   const { modal } = App.useApp();
+  const user = useUser();
 
   useEffect(() => {
     setLoading(true);
@@ -50,47 +42,56 @@ export default function DeleteFiles({ id }: { id: number }) {
 
   const handleSubmit = async () => {
     setLoading(true);
-    const newdata = selected
-      .filter((p) => p.files.length !== 0)
-      .map((d) => ({
-        rootFilename: d.rootFilename,
-        files: JSON.stringify(d.files),
-        statusAction: "PENDING",
-        description: desc
-          ? JSON.stringify([
-              {
-                name: user?.fullname,
-                date: moment().format("DD/MM/YYYY"),
-                desc: desc,
-              },
-            ])
-          : null,
-        action: "DELETE",
-        status: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        requesterId: user?.id,
-        approverId: null,
-        documentId: data?.documentId,
-      }));
+    const files = tempData.flatMap((r) => r.Files).map((r) => ({ id: r.id }));
+    const newData = {
+      statusAction: StatusAction.PENDING,
+      description: JSON.stringify([
+        {
+          time: moment().format("DD/MM/YYYY HH:mm"),
+          user: user?.fullname,
+          desc,
+        },
+      ]),
+      action: ENeedAction.DELETE,
+      status: true,
+      Files: files,
+      requesterId: user?.id || 0,
+      permohonanKreditId: Number(id),
+    };
+
     await fetch("/api/request", {
       method: "POST",
-      body: JSON.stringify(newdata),
+      body: JSON.stringify(newData),
     })
       .then((res) => res.json())
       .then(async (res) => {
-        modal.success({
-          title: "BERHASIL",
-          content: "Permohnan hapus file berhasil dikirimkan",
-        });
-        await fetch("/api/sendEmail", {
-          method: "POST",
-          body: JSON.stringify({
-            subject: `Permohonan Hapus File Baru`,
-            description: `${user?.fullname} berhasil mengajukan permohnan hapus file baru untuk data kredit ${data?.fullname}`,
-          }),
-        });
-        window && window.location.replace("/request/delete");
+        if (res.status === 201) {
+          modal.success({
+            title: "BERHASIL",
+            content: "Permohonan hapus file berhasil dikirimkan",
+          });
+          await fetch("/api/sendEmail", {
+            method: "POST",
+            body: JSON.stringify({
+              subject: `Permohonan Hapus File Baru`,
+              description: `${
+                user?.fullname
+              } berhasil mengajukan permohonan hapus file baru untuk data kredit ${
+                data?.fullname
+              } <br/><br/>${tempData
+                .filter((t) => t.Files.length !== 0)
+                .map(
+                  (t) =>
+                    `${t.name} (${t.Files.map((tf) => tf.name).join(
+                      ", "
+                    )})<br/>`
+                )}`,
+            }),
+          });
+          window && window.location.replace("/request/delete");
+        } else {
+          modal.error({ title: "ERROR", content: "Internal Server Error" });
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -115,196 +116,16 @@ export default function DeleteFiles({ id }: { id: number }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-4 justify-between">
-          <Items
-            label="FILE IDENTITAS"
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE IDENTITAS"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE IDENTITAS",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-            files={
-              JSON.parse(
-                data.Document.fileIdentitas || "[]"
-              ) as unknown as IFileList[]
-            }
-          />
-          <Items
-            label="FILE KEPATUHAN"
-            files={
-              JSON.parse(
-                data.Document.fileKepatuhan || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE KEPATUHAN"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE KEPATUHAN",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-          />
-          <Items
-            label="FILE MAUK"
-            files={
-              JSON.parse(
-                data.Document.fileMAUK || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE MAUK"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE MAUK",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-          />
-          <Items
-            label="FILE ASPEK KEUANGAN"
-            files={
-              JSON.parse(
-                data.Document.fileAspekKKeuangan || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE ASPEK KEUANGAN"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE ASPEK KEUANGAN",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-          />
-          <Items
-            label="FILE SLIK"
-            files={
-              JSON.parse(
-                data.Document.fileSLIK || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE FILE SLIK"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE FILE SLIK",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-          />
-          <Items
-            label="FILE JAMINAN"
-            files={
-              JSON.parse(
-                data.Document.fileJaminan || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE JAMINAN"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE JAMINAN",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-            request={(() => {
-              const find = data.Document.PermohonanAction.filter(
-                (f) => f.rootFilename === "FILE JAMINAN"
-              );
-              if (find.length === 0) return undefined;
-              return find[0];
-            })()}
-          />
-          <Items
-            label="FILE KREDIT"
-            files={
-              JSON.parse(
-                data.Document.fileKredit || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE KREDIT"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE KREDIT",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-          />
-          <Items
-            label="FILE LEGAL"
-            files={
-              JSON.parse(
-                data.Document.fileLegal || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE LEGAL"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE LEGAL",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-          />
-          <Items
-            label="FILE CUSTODY"
-            files={
-              JSON.parse(
-                data.Document.fileCustody || "[]"
-              ) as unknown as IFileList[]
-            }
-            selected={(() => {
-              const find = selected.filter(
-                (s) => s.rootFilename === "FILE CUSTODY"
-              );
-              if (find.length !== 0) return find[0];
-
-              return {
-                rootFilename: "FILE CUSTODY",
-                files: [],
-              };
-            })()}
-            setSelected={setSelected}
-          />
+          {data.RootFiles.map((d) => (
+            <Items data={d} key={d.id} setSelected={setTempData} />
+          ))}
         </div>
         <div className="flex justify-end p-2">
-          <Button type="primary" onClick={() => setOpen(true)}>
+          <Button
+            type="primary"
+            onClick={() => setOpen(true)}
+            disabled={tempData.filter((t) => t.Files.length !== 0).length === 0}
+          >
             Submit
           </Button>
         </div>
@@ -313,29 +134,19 @@ export default function DeleteFiles({ id }: { id: number }) {
         open={open}
         loading={loading}
         onCancel={() => setOpen(false)}
+        onOk={() => handleSubmit()}
         title="KONFIRMASI PENGHAPUSAN BERKAS"
-        okButtonProps={{
-          loading: loading,
-          onClick: () => handleSubmit(),
-          disabled:
-            selected.filter((s) => s.files.length !== 0).length === 0
-              ? true
-              : false,
-        }}
       >
-        <div className="my-4">
-          {selected
-            .filter((s) => s.files.length !== 0)
-            .map((s) => (
-              <div key={s.rootFilename} className="flex gap-4 items-center">
-                <p className="font-bold w-42">{s.rootFilename}</p>
-                <span>:</span>
-                <div className="text-xs flex gap-2">
-                  {s.files.map((f) => (
-                    <div key={f.file}>{f.name},</div>
-                  ))}
-                </div>
-              </div>
+        <div className="my-4 flex flex-col gap-1">
+          {tempData
+            .filter((f) => f.Files.length !== 0)
+            .map((f) => (
+              <FormInput
+                label={f.name}
+                value={f.Files.map((fc) => fc.name).join(", ")}
+                disable
+                key={f.name}
+              />
             ))}
           <div>
             <FormInput
@@ -352,88 +163,81 @@ export default function DeleteFiles({ id }: { id: number }) {
 }
 
 const Items = ({
-  label,
-  files,
-  selected,
+  data,
   setSelected,
-  request,
 }: {
-  label: string;
-  files: IFileList[];
-  selected: SelectedFIles;
+  data: IRootFiles;
   setSelected: Function;
-  request?: PermohonanAction;
 }) => {
-  const [tempSelected, setTempSelected] = useState<IFileList[]>(
-    selected ? selected.files : []
-  );
-  const [open, setOpen] = useState(false);
+  const [tempData, setTempData] = useState<IRootFiles>({ ...data, Files: [] });
+  const [selectedFile, setSelectedFile] = useState<IFiles>();
 
   useEffect(() => {
-    setSelected((prev: SelectedFIles[]) =>
-      prev.map((p) => {
-        if (p.rootFilename === label) {
-          p.files = tempSelected;
-        }
-        return p;
-      })
-    );
-  }, [tempSelected]);
+    setSelected((prev: IRootFiles[]) => {
+      prev = prev.filter((p) => p.id !== tempData.id);
+      prev.push(tempData);
+      return prev;
+    });
+  }, [tempData]);
 
   return (
     <div className="w-full sm:w-[40vw] p-1 my-1">
       <div className="font-bold p-2 bg-gradient-to-br from-blue-500 to-green-500 text-gray-50 rounded">
-        <p>{label}</p>
+        <p>{data.name.toUpperCase()}</p>
       </div>
-      {files.map((file) => (
-        <div key={file.file} className="border-b border-gray-200 p-1">
+      {data.Files.map((file) => (
+        <div key={file.url} className="border-b border-gray-200 p-1">
           <Checkbox
-            checked={tempSelected.some((f) => f.file === file.file)}
+            checked={tempData.Files.some((f) => f.url === file.url)}
             style={{ fontSize: 12 }}
-            disabled={
-              request &&
-              (JSON.parse(request.files) as IFileList[]).filter(
-                (req) => req.file === file.file
-              ).length !== 0
-                ? true
-                : false
-            }
+            disabled={file.PermohonanAction.some(
+              (pa) =>
+                pa.action === ENeedAction.DELETE &&
+                pa.statusAction === StatusAction.PENDING
+            )}
             onChange={(e) => {
               if (e.target.checked) {
-                setTempSelected([...tempSelected, file]);
+                setTempData({ ...tempData, Files: [...tempData.Files, file] });
               } else {
-                setTempSelected(
-                  tempSelected.filter((p) => p.file !== file.file)
-                );
+                setTempData({
+                  ...tempData,
+                  Files: tempData.Files.filter((p) => p.url !== file.url),
+                });
               }
             }}
           >
             <div className="flex justify-between items-center">
               <p className="w-42">
                 {file.name}{" "}
-                {request &&
-                  (JSON.parse(request.files) as IFileList[]).filter(
-                    (req) => req.file === file.file
-                  ).length !== 0 &&
-                  `(PENDING)`}
+                {file.PermohonanAction.some(
+                  (pa) =>
+                    pa.action === ENeedAction.DELETE &&
+                    pa.statusAction === StatusAction.PENDING
+                ) ? (
+                  <span className="italic opacity-80 text-xs">
+                    (PENDING DELETE)
+                  </span>
+                ) : (
+                  ""
+                )}
               </p>
               <Button
                 icon={<FileOutlined />}
                 size="small"
-                onClick={() => setOpen(true)}
+                onClick={() => setSelectedFile(file)}
               ></Button>
             </div>
           </Checkbox>
           <Modal
-            open={open}
-            onCancel={() => setOpen(false)}
+            open={selectedFile ? true : false}
+            onCancel={() => setSelectedFile(undefined)}
             footer={[]}
             width={window && window.innerWidth > 600 ? "80vw" : "95vw"}
             style={{ top: 20 }}
-            title={"BERKAS " + file.name}
+            title={"BERKAS " + selectedFile ? selectedFile?.name : ""}
           >
             <div className="h-[80vh]">
-              <MyPDFViewer fileUrl={file.file} />
+              <MyPDFViewer fileUrl={selectedFile ? selectedFile.url : ""} />
             </div>
           </Modal>
         </div>

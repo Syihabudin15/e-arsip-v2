@@ -5,85 +5,118 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  const roleFind = await prisma.role.findFirst({
+  const permision: IPermission[] = [
+    { path: "/dashboard", access: ["read"] },
+    {
+      path: "/roles",
+      access: ["read", "update", "write", "delete"],
+    },
+    {
+      path: "/users",
+      access: ["read", "update", "write", "delete"],
+    },
+    {
+      path: "/jenis-pemohon",
+      access: ["read", "update", "write", "delete"],
+    },
+    {
+      path: "/permohonan-kredit",
+      access: ["read", "update", "write", "delete"],
+    },
+    {
+      path: "/document",
+      access: ["read", "update", "write", "delete"],
+    },
+    {
+      path: "/logs",
+      access: ["read", "update", "write", "delete"],
+    },
+  ];
+
+  const role = await prisma.role.upsert({
     where: { roleName: "ADMINISTRATOR" },
+    update: {},
+    create: {
+      roleName: "ADMINISTRATOR",
+      permission: JSON.stringify(permision),
+
+      status: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   });
-  let roleId = roleFind ? roleFind.id : 1;
-  if (!roleFind) {
-    const permision: IPermission[] = [
-      { path: "/dashboard", access: ["read"] },
-      {
-        path: "/roles",
-        access: ["read", "update", "write", "delete", "detail"],
-      },
-      {
-        path: "/users",
-        access: ["read", "update", "write", "delete", "detail"],
-      },
-      {
-        path: "/jenis-pemohon",
-        access: ["read", "update", "write", "delete", "detail"],
-      },
-      {
-        path: "/permohonan-kredit",
-        access: ["read", "update", "write", "delete", "detail"],
-      },
-      {
-        path: "/document",
-        access: ["read", "update", "write", "delete", "detail"],
-      },
-      {
-        path: "/logs",
-        access: ["read", "update", "write", "delete", "detail"],
-      },
-    ];
-
-    const roleSaved = await prisma.role.create({
-      data: {
-        roleName: "ADMINISTRATOR",
-        permission: JSON.stringify(permision),
-
-        status: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-    roleId = roleSaved.id;
-  }
-  const findUser = await prisma.user.findFirst({
+  const pass = await bcrypt.hash("Tsani182", 10);
+  await prisma.user.upsert({
     where: { username: "syihabudin" },
+    update: {},
+    create: {
+      fullname: "SYIHABUDIN TSANI",
+      username: "syihabudin",
+      password: pass,
+      email: "syihabudin@gmail.com",
+      photo: null,
+
+      status: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      roleId: role.id,
+    },
   });
-  if (!findUser) {
-    const pass = await bcrypt.hash("Tsani182", 10);
-    await prisma.user.createMany({
-      data: [
-        {
-          fullname: "SYIHABUDIN TSANI",
-          username: "syihabudin",
-          password: pass,
-          email: "syihabudin@gmail.com",
-          photo: null,
+  await prisma.user.upsert({
+    where: { username: "oldy" },
+    update: {},
+    create: {
+      fullname: "OLDYWJK",
+      username: "oldy",
+      password: pass,
+      email: "oldy@gmail.com",
+      photo: null,
 
-          status: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          roleId: roleId,
-        },
-        {
-          fullname: "OLDYWJK",
-          username: "oldy",
-          password: pass,
-          email: "oldy@gmail.com",
-          photo: null,
+      status: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      roleId: role.id,
+    },
+  });
 
-          status: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          roleId: roleId,
-        },
-      ],
-    });
-  }
+  await prisma.jenisPemohon.upsert({
+    where: { name: "PERORANGAN" },
+    update: {},
+    create: {
+      name: "PERORANGAN",
+      keterangan: "",
+    },
+  });
+  await prisma.jenisPemohon.upsert({
+    where: { name: "BADAN USAHA" },
+    update: {},
+    create: {
+      name: "BADAN USAHA",
+      keterangan: "",
+    },
+  });
+
+  const rootFilesSeed = [
+    { name: "File Identitas" },
+    { name: "File Kepatuhan" },
+    { name: "File MAUK" },
+    { name: "File Aspek Keuangan" },
+    { name: "File SLIK" },
+    { name: "File Jaminan" },
+    { name: "File Kredit" },
+    { name: "File Legal" },
+    { name: "File Custody" },
+  ];
+
+  await Promise.all(
+    rootFilesSeed.map((rf) =>
+      prisma.rootFiles.upsert({
+        where: { name: rf.name },
+        update: {},
+        create: rf,
+      })
+    )
+  );
   console.log("Seeding succeesfully...");
 }
 main()

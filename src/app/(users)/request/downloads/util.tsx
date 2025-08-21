@@ -1,22 +1,22 @@
 "use client";
 
 import { useUser } from "@/components/contexts/UserContext";
-import { IFileList, IPermohonanKredit, IUser } from "@/components/IInterfaces";
+import {
+  IDescription,
+  IFiles,
+  IPermohonanAction,
+  IPermohonanKredit,
+  IUser,
+} from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
 import { MyPDFViewer } from "@/components/utils/LayoutUtil";
-import { useAccess } from "@/components/utils/PermissionUtil";
+import { hasAccess, useAccess } from "@/components/utils/PermissionUtil";
 import {
-  FileOutlined,
+  FolderOutlined,
   FormOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
-import {
-  Document,
-  PermohonanAction,
-  PermohonanKredit,
-  StatusAction,
-  User,
-} from "@prisma/client";
+import { ENeedAction, StatusAction } from "@prisma/client";
 import {
   App,
   Button,
@@ -31,16 +31,6 @@ import {
 import moment from "moment";
 import { useEffect, useState } from "react";
 const { Paragraph } = Typography;
-
-interface IDocument extends Document {
-  PermohonanKredit: PermohonanKredit[];
-}
-
-interface IPermohonanAction extends PermohonanAction {
-  Document: IDocument;
-  Requester: User;
-  Approver: User;
-}
 
 export default function TableDownload() {
   const [page, setPage] = useState(1);
@@ -62,6 +52,7 @@ export default function TableDownload() {
     )
       .then((res) => res.json())
       .then((res) => {
+        console.log(res);
         setData(res.data);
         setTotal(res.total);
       })
@@ -137,7 +128,6 @@ export default function TableDownload() {
         };
       },
       render(value, record, index) {
-        const files = JSON.parse(record.files) as IFileList[];
         return (
           <>
             <Paragraph
@@ -147,7 +137,14 @@ export default function TableDownload() {
               }}
               style={{ fontSize: 12 }}
             >
-              {record.rootFilename} ({files.map((f) => f.name + ", ")})
+              {record.RootFiles.map((rf) => ({
+                name: rf.name,
+                files: rf.Files.map((rff) => rff.name).join(", "),
+              })).map((r) => (
+                <>
+                  {r.name} ({r.files})<br />
+                </>
+              ))}
             </Paragraph>
           </>
         );
@@ -155,7 +152,7 @@ export default function TableDownload() {
     },
     {
       title: "DATA KREDIT",
-      dataIndex: "fullname",
+      dataIndex: ["PermohonanKredit", "fullname"],
       key: "fullname",
       className: "text-xs",
       width: 200,
@@ -166,9 +163,6 @@ export default function TableDownload() {
             fontSize: 12,
           },
         };
-      },
-      render(value, record, index) {
-        return <>{record.Document.PermohonanKredit[0].fullname}</>;
       },
     },
     {
@@ -216,8 +210,9 @@ export default function TableDownload() {
         };
       },
       render(value, record, index) {
-        const desc: { name: string; date: string; desc: string }[] | null =
-          record.description ? JSON.parse(record.description) : null;
+        const desc: IDescription[] | null = record.description
+          ? JSON.parse(record.description)
+          : null;
         return (
           <>
             <Paragraph
@@ -231,7 +226,8 @@ export default function TableDownload() {
                 desc.map((d) => (
                   <>
                     {"{"}
-                    {d.name} ({d.date}): {d.desc}.{"}"}
+                    {d.user} ({d.time}): {d.desc}
+                    {"}"}
                     <br />
                     <br />
                   </>
@@ -309,9 +305,13 @@ export default function TableDownload() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            <ViewDownload data={record} />
             {hasAccess("update") && (
-              <ProsesDownload data={record} getData={getData} />
+              <ProsesDownloadFile
+                data={record}
+                getData={getData}
+                user={user || null}
+                hasAccess={hasAccess}
+              />
             )}
           </div>
         );
@@ -328,16 +328,12 @@ export default function TableDownload() {
           </div>
           <div className="flex my-2 gap-2 justify-between">
             <div className="flex gap-2">
-              {user && (
-                <>
-                  {hasAccess("write") && (
-                    <CreateDownload
-                      dataKredits={dataKredit}
-                      user={user as IUser}
-                      getData={getData}
-                    />
-                  )}
-                </>
+              {hasAccess("write") && (
+                <CreateDownloadFile
+                  data={dataKredit}
+                  getData={getData}
+                  user={user || null}
+                />
               )}
             </div>
             <div className="w-42">
@@ -370,16 +366,18 @@ export default function TableDownload() {
   );
 }
 
-const ProsesDownload = ({
+const ProsesDownloadFile = ({
   data,
   getData,
+  user,
+  hasAccess,
 }: {
   data: IPermohonanAction;
   getData: Function;
+  user: IUser | null;
+  hasAccess: Function;
 }) => {
   const [open, setOpen] = useState(false);
-  const user = useUser();
-  const { hasAccess } = useAccess("/request/delete");
   const [desc, setDesc] = useState<string>();
   const [status, setStatus] = useState<StatusAction>();
   const [loading, setLoading] = useState(false);
@@ -388,26 +386,22 @@ const ProsesDownload = ({
   const handleSubmit = async () => {
     setLoading(true);
     if (desc) {
-      const currDesc = data.description ? JSON.parse(data.description) : [];
+      const currDesc: IDescription[] = data.description
+        ? JSON.parse(data.description)
+        : [];
       currDesc.push({
-        name: user?.fullname,
-        date: moment().format("DD/MM/YYYY HH:mm"),
+        user: user?.fullname || "",
+        time: moment().format("DD/MM/YYYY HH:mm"),
         desc,
       });
       data.description = JSON.stringify(currDesc);
     }
     data.statusAction = status || StatusAction.PENDING;
     data.approverId = user?.id || null;
-    const files: IFileList[] = JSON.parse(data.files || "[]");
-    const mapp = files.map((f) => ({
-      ...f,
-      allowedDownload: `${user?.id}`,
-    }));
-    data.files = JSON.stringify(mapp);
-    const { Requester, Approver, Document, ...savedData } = data;
+
     await fetch("/api/request", {
       method: "PUT",
-      body: JSON.stringify(savedData),
+      body: JSON.stringify(data),
     })
       .then((res) => res.json())
       .then(async (res) => {
@@ -416,21 +410,31 @@ const ProsesDownload = ({
         } else {
           modal.success({
             title: "BERHASIL",
-            content: "Data Permohonan berhasil diperbarui",
+            content: `User ${data.Requester.fullname} ${
+              data.statusAction === StatusAction.APPROVED
+                ? "sekarang dapat mendownload berkas-berkas ini"
+                : "Belum dapat mendownload berkas-berkas ini kare status " +
+                  data.statusAction
+            }`,
           });
           setOpen(false);
           getData();
           await fetch("/api/sendEmail", {
             method: "POST",
             body: JSON.stringify({
-              subject: `Permohonan Download Di Proses`,
+              subject: `Proses Permohonan Download File`,
               description: `${
                 user?.fullname
-              } Berhasil melakukan proses pada permohonan download ${
-                data.Document.PermohonanKredit[0].fullname
-              }. Sekarang ${data.Requester.fullname} dapat mendownload file ${
-                data.rootFilename
-              } (${JSON.stringify(data.files)})`,
+              } Berhasil melakukan proses download file pada data permohonan ${
+                data.PermohonanKredit.fullname
+              } dengan status ${data.statusAction}. ${
+                data.statusAction === StatusAction.APPROVED
+                  ? `sekarang ${data.Requester.fullname} dapat mendownload berkas-berkas tersebut. <br/> Berikut detail dari data data yang telah disetujui untuk di download :`
+                  : ""
+              } <br/><br/> ${data.RootFiles.map((rf) => ({
+                name: rf.name,
+                files: rf.Files.map((rff) => rff.name).join(", "),
+              })).map((r) => `${r.name} (${r.files})<br />`)}`,
             }),
           });
         }
@@ -446,8 +450,14 @@ const ProsesDownload = ({
       <Button
         size="small"
         type="primary"
-        disabled={data.statusAction === StatusAction.APPROVED}
-        icon={<FormOutlined />}
+        // disabled={data.statusAction === StatusAction.APPROVED}
+        icon={
+          data.statusAction === StatusAction.APPROVED ? (
+            <FolderOutlined />
+          ) : (
+            <FormOutlined />
+          )
+        }
         onClick={() => setOpen(true)}
       ></Button>
       <Modal
@@ -457,31 +467,35 @@ const ProsesDownload = ({
         width={window.innerWidth > 600 ? "90vw" : "95vw"}
         style={{ top: 20 }}
         footer={[]}
+        loading={loading}
       >
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="w-full sm:flex-2">
+          <div className="w-full sm:flex-1">
             <Tabs
               size="small"
               type="card"
-              // tabBarStyle={{
-              //   ...(window && window.innerWidth > 600 && { width: 80 }),
-              // }}
               items={[
-                ...(JSON.parse(data.files) as IFileList[]).map((f) => ({
+                ...data.RootFiles.flatMap((f) => f.Files).map((f) => ({
                   label: f.name,
                   key: f.name + Date.now(),
                   children: (
                     <div className="h-[72vh]">
                       <MyPDFViewer
-                        fileUrl={f.file}
+                        fileUrl={f.url}
                         download={(() => {
-                          if (!f.allowedDownload) return false;
-                          const filter = f.allowedDownload
+                          const filter = f.allowDownload
                             .split(",")
-                            .filter((i) => user && parseInt(i) === user.id);
-                          if (hasAccess("download") || filter.length !== 0) {
+                            .map(Number)
+                            .includes(user?.id || 0);
+                          if (
+                            ["ADMINISTRATOR", "DEVELOPER"].includes(
+                              user?.role.roleName || ""
+                            ) ||
+                            filter
+                          ) {
                             return true;
                           }
+                          if (!f.allowDownload) return false;
                           return false;
                         })()}
                       />
@@ -504,26 +518,25 @@ const ProsesDownload = ({
               />
               <FormInput
                 label="DATA KREDIT"
-                value={data.Document.PermohonanKredit[0].fullname}
+                value={data.PermohonanKredit.fullname}
                 disable
               />
-              <FormInput label="NAMA FILE" value={data.rootFilename} disable />
-              <FormInput
-                label="ISI FILE"
-                value={(() => {
-                  const json = JSON.parse(data.files) as IFileList[];
-                  return json.map((v) => v.name).join(", ");
-                })()}
-                disable
-              />
+              {data.RootFiles.map((rf) => (
+                <FormInput
+                  label={rf.name}
+                  value={rf.Files.map((f) => f.name).join(",")}
+                  disable
+                  key={rf.id}
+                />
+              ))}
               {data.description &&
                 JSON.parse(data.description).map(
                   (
-                    d: { name: string; date: string; desc: string },
+                    d: { user: string; time: string; desc: string },
                     i: number
                   ) => (
                     <FormInput
-                      label={`${d.name} (${d.date})`}
+                      label={`${d.user} (${d.time})`}
                       type="area"
                       value={d.desc}
                       disable
@@ -531,48 +544,53 @@ const ProsesDownload = ({
                     />
                   )
                 )}
-              <div className="p-2 font-bold bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50">
-                <p>PROSES PERMOHONAN</p>
-              </div>
-              <div className="flex flex-col gap-1">
-                <FormInput
-                  label="Status"
-                  value={status}
-                  onChange={(e: any) => setStatus(e)}
-                  type="option"
-                  options={[
-                    {
-                      label: StatusAction.PENDING,
-                      value: StatusAction.PENDING,
-                    },
-                    {
-                      label: StatusAction.APPROVED,
-                      value: StatusAction.APPROVED,
-                    },
-                    {
-                      label: StatusAction.REJECTED,
-                      value: StatusAction.REJECTED,
-                    },
-                  ]}
-                  required
-                />
-                <FormInput
-                  label="Keterangan"
-                  value={desc}
-                  onChange={(e: any) => setDesc(e)}
-                  type="area"
-                />
-                <div className="flex justify-end">
-                  <Button
-                    type="primary"
-                    loading={loading}
-                    disabled={!status}
-                    onClick={() => handleSubmit()}
-                  >
-                    Submit
-                  </Button>
-                </div>
-              </div>
+              {data.statusAction !== StatusAction.APPROVED &&
+                hasAccess("update")(
+                  <>
+                    <div className="p-2 font-bold bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50">
+                      <p>PROSES PERMOHONAN</p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <FormInput
+                        label="Status"
+                        value={status}
+                        onChange={(e: any) => setStatus(e)}
+                        type="option"
+                        options={[
+                          {
+                            label: StatusAction.PENDING,
+                            value: StatusAction.PENDING,
+                          },
+                          {
+                            label: StatusAction.APPROVED,
+                            value: StatusAction.APPROVED,
+                          },
+                          {
+                            label: StatusAction.REJECTED,
+                            value: StatusAction.REJECTED,
+                          },
+                        ]}
+                        required
+                      />
+                      <FormInput
+                        label="Keterangan"
+                        value={desc}
+                        onChange={(e: any) => setDesc(e)}
+                        type="area"
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          type="primary"
+                          loading={loading}
+                          disabled={!status}
+                          onClick={() => handleSubmit()}
+                        >
+                          Submit
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
             </div>
           </div>
         </div>
@@ -581,82 +599,69 @@ const ProsesDownload = ({
   );
 };
 
-const CreateDownload = ({
-  user,
-  dataKredits,
+const CreateDownloadFile = ({
+  data,
   getData,
+  user,
 }: {
-  user: IUser;
-  dataKredits: IPermohonanKredit[];
+  data: IPermohonanKredit[];
   getData: Function;
+  user: IUser | null;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<IPermohonanKredit>();
-  const [files, setFiles] = useState<IFileList[]>([]);
-  const [data, setData] = useState<PermohonanAction>({
-    id: 0,
-    rootFilename: "",
-    files: "",
-    statusAction: "PENDING",
-    description: "",
-    action: "DOWNLOAD",
-    status: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    requesterId: user.id,
-    approverId: null,
-    documentId: 0,
-  });
+  const [filesSelected, setFilesSelected] = useState<IFiles[]>([]);
+  const [desc, setDesc] = useState<string>();
   const { modal } = App.useApp();
-
-  const onSelectedRoot = (e: string) => {
-    if (!e) return;
-    const rootFilename = e
-      .toLowerCase()
-      .replace(/[^a-zA-Z0-9 ]/g, "") // buang karakter aneh
-      .replace(/ (.)/g, (match, group1) => group1.toUpperCase());
-    const findDocFiles: IFileList[] =
-      JSON.parse((selected?.Document as any)[rootFilename] || "[]") || [];
-    setData({ ...data, rootFilename: e });
-    setFiles(findDocFiles);
-  };
 
   const handleSubmit = async () => {
     setLoading(true);
     const newData = {
-      ...data,
-      files: JSON.stringify(files.filter((f) => data.files.includes(f.file))),
-    };
-    if (data.description) {
-      newData.description = JSON.stringify([
+      statusAction: StatusAction.PENDING,
+      description: JSON.stringify([
         {
-          name: user.fullname,
-          date: moment().format("DD/MM/YYYY HH:mm"),
-          desc: data.description,
+          user: user?.fullname,
+          time: moment().format("DD/MM/YYYY HH:mm"),
+          desc,
         },
-      ]);
-    }
+      ]),
+      action: ENeedAction.DOWNLOAD,
+
+      status: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      requesterId: user?.id || 0,
+      approverId: null,
+      permohonanKreditId: selected ? selected.id : 0,
+      Files: filesSelected,
+    };
     await fetch("/api/request", {
       method: "POST",
-      body: JSON.stringify([newData]),
+      body: JSON.stringify(newData),
     })
       .then((res) => res.json())
       .then(async (res) => {
         if (res.status === 201) {
           modal.success({
-            title: "Berhasil",
-            content: "Permohonan download berhasil diajukan!",
+            title: "BERHASIL",
+            content: "Permohonan download file berhasil dikirimkan",
           });
-          setOpen(false);
-          getData();
           await fetch("/api/sendEmail", {
             method: "POST",
             body: JSON.stringify({
-              subject: `Permohonan Download File (${user.fullname})`,
-              description: `${user?.fullname} mengajukan permohonan download file pada data pemohon kredit ${selected?.fullname} dengan data data sebagai berikut: ${data.rootFilename} (${data.files})`,
+              subject: `Permohonan Download File Baru`,
+              description: `${
+                user?.fullname
+              } berhasil mengajukan permohonan download file baru untuk data kredit ${
+                selected?.fullname
+              } <br/><br/> ${filesSelected.map((f) => f.name).join(",")}`,
             }),
           });
+          setOpen(false);
+          await getData();
+        } else {
+          modal.error({ title: "ERROR", content: "Internal Server Error" });
         }
       })
       .catch((err) => {
@@ -678,182 +683,55 @@ const CreateDownload = ({
       </Button>
       <Modal
         open={open}
-        title="BUAT PERMOHONAN DOWNLOAD"
+        title="BUAT PERMOHONAN DOWNLOAD FILE"
         onCancel={() => setOpen(false)}
+        loading={loading}
+        style={{ top: 30 }}
+        okButtonProps={{ disabled: filesSelected.length === 0 }}
         onOk={() => handleSubmit()}
-        okButtonProps={{
-          loading: loading,
-          disabled: data.files
-            ? JSON.parse(data.files).length === 0
-              ? true
-              : false
-            : false,
-        }}
       >
-        <FormInput
-          label="Data Kredit"
-          type="option"
-          value={selected?.id}
-          onChange={(e: any) => {
-            const find = dataKredits.filter((f) => f.id === e);
-            if (find.length === 0) return;
-            setSelected(find[0]);
-            setData({ ...data, documentId: find[0].documentId });
-          }}
-          options={dataKredits.map((d) => ({ label: d.fullname, value: d.id }))}
-        />
-        {selected && (
+        <div className="flex flex-col gap-1">
           <FormInput
-            label="Root Filename"
+            label="Data Kredit"
             type="option"
-            value={data.rootFilename}
-            onChange={(e: any) => onSelectedRoot(e)}
-            options={optionRoot}
+            value={selected?.id}
+            onChange={(e: any) => {
+              const find = data.filter((f) => f.id === e);
+              if (find.length === 0) return alert("Invalid Data Kredit");
+              setSelected(find[0]);
+            }}
+            options={data.map((d) => ({ label: d.fullname, value: d.id }))}
           />
-        )}
-        {data.rootFilename && files.length === 0 && (
-          <div className="italic text-xs text-red-500 flex justify-end">
-            <p>Belum ada file di upload</p>
-          </div>
-        )}
-        {files.length !== 0 && (
-          <FormInput
-            label="Requested Files"
-            type="option"
-            optionsMode="multiple"
-            value={data.files ? JSON.parse(data.files) : []}
-            onChange={(e: any) =>
-              setData({ ...data, files: e ? JSON.stringify(e) : "" })
-            }
-            options={
-              files && files.map((d) => ({ label: d.name, value: d.file }))
-            }
-          />
-        )}
-        <FormInput
-          label="Keterangan"
-          type="area"
-          value={data.description}
-          onChange={(e: any) => setData({ ...data, description: e })}
-        />
-      </Modal>
-    </div>
-  );
-};
-
-const optionRoot = [
-  { label: "FILE IDENTITAS", value: "FILE IDENTITAS" },
-  { label: "FILE SLIK", value: "FILE SLIK" },
-  { label: "FILE JAMINAN", value: "FILE JAMINAN" },
-  { label: "FILE KREDIT", value: "FILE KREDIT" },
-  { label: "FILE ASPEK KEUANGAN", value: "FILE ASPEK KEUANGAN" },
-  { label: "FILE MAUK", value: "FILE MAUK" },
-  { label: "FILE KEPATUHAN", value: "FILE KEPATUHAN" },
-  { label: "FILE LEGAL", value: "FILE LEGAL" },
-  { label: "FILE CUSTODY", value: "FILE CUSTODY" },
-];
-
-const ViewDownload = ({ data }: { data: IPermohonanAction }) => {
-  const [open, setOpen] = useState(false);
-  const user = useUser();
-  const { hasAccess } = useAccess("/request/delete");
-
-  return (
-    <div>
-      {data.statusAction === StatusAction.APPROVED && (
-        <Button
-          size="small"
-          type="primary"
-          icon={<FileOutlined />}
-          onClick={() => setOpen(true)}
-        ></Button>
-      )}
-      <Modal
-        title={"VIEW PERMOHONAN"}
-        open={open}
-        onCancel={() => setOpen(false)}
-        width={window.innerWidth > 600 ? "90vw" : "95vw"}
-        style={{ top: 20 }}
-        footer={[]}
-      >
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="w-full sm:flex-2">
-            <Tabs
-              size="small"
-              type="card"
-              items={[
-                ...(JSON.parse(data.files) as IFileList[]).map((f) => ({
-                  label: f.name,
-                  key: f.name + Date.now(),
-                  children: (
-                    <div className="h-[72vh]">
-                      <MyPDFViewer
-                        fileUrl={f.file}
-                        download={(() => {
-                          if (!f.allowedDownload) return false;
-                          const filter = f.allowedDownload
-                            .split(",")
-                            .filter((i) => user && parseInt(i) === user.id);
-                          if (hasAccess("download") || filter.length !== 0) {
-                            return true;
-                          }
-                          return false;
-                        })()}
-                      />
-                    </div>
-                  ),
-                })),
-              ]}
-              tabPosition={"top"}
-            />
-          </div>
-          <div className="w-full sm:flex-1">
-            <div className="p-2 font-bold bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50">
-              <p>INFORMASI PERMOHONAN</p>
-            </div>
-            <div className="flex flex-col gap-1 h-[72vh] overflow-auto">
-              <FormInput
-                label="PEMOHON"
-                value={data.Requester.fullname}
-                disable
-              />
-              <FormInput
-                label="DATA KREDIT"
-                value={data.Document.PermohonanKredit[0].fullname}
-                disable
-              />
-              <FormInput label="NAMA FILE" value={data.rootFilename} disable />
-              <FormInput
-                label="ISI FILE"
-                value={(() => {
-                  const json = JSON.parse(data.files) as IFileList[];
-                  return json.map((v) => v.name).join(", ");
-                })()}
-                disable
-              />
-              {data.description &&
-                JSON.parse(data.description).map(
-                  (
-                    d: { name: string; date: string; desc: string },
-                    i: number
-                  ) => (
-                    <FormInput
-                      label={`${d.name} (${d.date})`}
-                      type="area"
-                      value={d.desc}
-                      disable
-                      key={i}
-                    />
+          {selected && (
+            <FormInput
+              label="Files"
+              type="option"
+              value={filesSelected.map((f) => f.url)}
+              onChange={(e: any) => {
+                setFilesSelected(
+                  e.map(
+                    (m: string) =>
+                      selected.RootFiles.flatMap((rf) => rf.Files).filter(
+                        (f) => f.url == m
+                      )[0]
                   )
-                )}
-              <FormInput
-                label="Status"
-                value={data.statusAction}
-                disable
-                type="option"
-              />
-            </div>
-          </div>
+                );
+              }}
+              options={selected.RootFiles.flatMap((rf) => rf.Files).map(
+                (f) => ({
+                  label: `${f.name} (${f.RootFiles.name})`,
+                  value: f.url,
+                })
+              )}
+              optionsMode="multiple"
+            />
+          )}
+          <FormInput
+            label="Keterangan"
+            type="area"
+            value={desc}
+            onChange={(e: any) => setDesc(e)}
+          />
         </div>
       </Modal>
     </div>
