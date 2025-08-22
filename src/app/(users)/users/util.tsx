@@ -372,6 +372,19 @@ const UpsertUser = ({
   );
   const { modal } = App.useApp();
 
+  // aturan validasi
+  const rules = [
+    { label: "Minimal 6 karakter", test: (pw: string) => pw.length >= 6 },
+    { label: "Mengandung huruf kecil", test: (pw: string) => /[a-z]/.test(pw) },
+    { label: "Mengandung huruf besar", test: (pw: string) => /[A-Z]/.test(pw) },
+    { label: "Mengandung angka", test: (pw: string) => /\d/.test(pw) },
+    {
+      label: "Mengandung karakter spesial (@$!%*?&)",
+      test: (pw: string) => /[@$!%*?&]/.test(pw),
+    },
+  ];
+  const failedRules = rules.filter((rule) => !rule.test(tempData.password));
+
   const handleSubmit = async () => {
     setLoading(true);
     if ("key" in tempData) {
@@ -416,6 +429,7 @@ const UpsertUser = ({
       });
     setLoading(false);
   };
+
   return (
     <div>
       <Button
@@ -434,12 +448,15 @@ const UpsertUser = ({
         loading={loading}
         okButtonProps={{
           loading: loading,
-          disabled:
+          disabled: !!(
             !tempData.fullname ||
             !tempData.username ||
             !tempData.email ||
             !tempData.roleId ||
-            !tempData.password,
+            (!data
+              ? !tempData.password || failedRules.length !== 0
+              : tempData.password && failedRules.length !== 0)
+          ),
         }}
       >
         <div className="my-4 flex flex-col gap-1">
@@ -476,6 +493,13 @@ const UpsertUser = ({
               setTempData((prev: User) => ({ ...prev, password: e }))
             }
           />
+          {!data && failedRules.length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 10, color: "red" }}>
+              {failedRules.map((rule, idx) => (
+                <div key={idx}>✘ {rule.label}</div>
+              ))}
+            </div>
+          )}
           <FormInput
             label="Role"
             required

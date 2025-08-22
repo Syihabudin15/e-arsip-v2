@@ -118,6 +118,7 @@ export const GET = async (req: NextRequest) => {
             id: files.RootFiles.id,
             name: files.RootFiles.name,
             Files: [files],
+            order: files.RootFiles.order,
           });
         } else {
           root = root.map((r) => ({ ...r, Files: [...r.Files, files] }));

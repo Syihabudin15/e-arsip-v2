@@ -168,8 +168,9 @@ export default function CreatePermohonanKredit({
           <FormInput
             label="Nomor NIK"
             value={data.NIK}
+            type="number"
             onChange={(e: string) => {
-              setData({ ...data, NIK: e });
+              setData({ ...data, NIK: String(e) });
               if (record) {
                 const txt = `Edit NIK (${record.NIK} to ${e})`;
                 setActivity((prev) => {
@@ -187,10 +188,11 @@ export default function CreatePermohonanKredit({
           <FormInput
             label="Nomor Rekening"
             value={data.accountNumber}
+            type="number"
             onChange={(e: string) => {
               setData({
                 ...data,
-                accountNumber: e,
+                accountNumber: String(e),
               });
               if (record) {
                 const txt = `Edit No Rekening (${record.accountNumber} to ${e})`;

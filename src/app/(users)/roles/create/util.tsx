@@ -141,7 +141,14 @@ export default function UpsertRole({ record }: { record?: Role }) {
         return (
           <>
             <Checkbox.Group
-              options={["read", "write", "update", "delete", "detail"]}
+              options={[
+                "read",
+                "write",
+                "update",
+                "delete",
+                "download",
+                "detail",
+              ]}
               value={record.access}
               onChange={(e) => {
                 setMenus((prev: IMenu[]) => {
@@ -188,6 +195,7 @@ export default function UpsertRole({ record }: { record?: Role }) {
             pagination={false}
             scroll={{ x: "max-content", y: 370 }}
             loading={loading}
+            bordered
           />
         </div>
         <div className="flex justify-end m-4 gap-4">

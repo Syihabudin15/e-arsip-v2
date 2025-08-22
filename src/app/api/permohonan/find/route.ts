@@ -24,7 +24,9 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const findRootFile = await prisma.rootFiles.findMany();
+    const findRootFile = await prisma.rootFiles.findMany({
+      orderBy: { order: "asc" },
+    });
     const newData: IPermohonanKredit = { ...data, RootFiles: [] };
 
     for (const root of findRootFile) {

@@ -207,9 +207,9 @@ export default function TableDokumen() {
       },
     },
     {
-      title: "FILE KEPATUHAN",
-      dataIndex: "fileKepatuhan",
-      key: "fileKepatuhan",
+      title: "FILE KREDIT",
+      dataIndex: "fileKredit",
+      key: "fileKredit",
       className: "text-xs",
       width: 200,
       onHeaderCell: () => {
@@ -222,69 +222,7 @@ export default function TableDokumen() {
       },
       render(value, record, index) {
         const rootFile = record.RootFiles.filter(
-          (p) => p.name === "File Kepatuhan"
-        );
-        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
-        return <>{files.map((f) => f.name).join(",")}</>;
-      },
-    },
-    {
-      title: "FILE MAUK",
-      dataIndex: "fileMAUK",
-      key: "fileMAUK",
-      className: "text-xs",
-      width: 200,
-      onHeaderCell: () => {
-        return {
-          ["style"]: {
-            textAlign: "center",
-            fontSize: 12,
-          },
-        };
-      },
-      render(value, record, index) {
-        const rootFile = record.RootFiles.filter((p) => p.name === "File MAUK");
-        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
-        return <>{files.map((f) => f.name).join(",")}</>;
-      },
-    },
-    {
-      title: "FILE SLIK",
-      dataIndex: "fileSLIK",
-      key: "fileSLIK",
-      className: "text-xs",
-      width: 200,
-      onHeaderCell: () => {
-        return {
-          ["style"]: {
-            textAlign: "center",
-            fontSize: 12,
-          },
-        };
-      },
-      render(value, record, index) {
-        const rootFile = record.RootFiles.filter((p) => p.name === "File SLIK");
-        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
-        return <>{files.map((f) => f.name).join(",")}</>;
-      },
-    },
-    {
-      title: "FILE ASPEK KEUANGAN",
-      dataIndex: "fileAspekKKeuangan",
-      key: "fileAspekKKeuangan",
-      className: "text-xs",
-      width: 200,
-      onHeaderCell: () => {
-        return {
-          ["style"]: {
-            textAlign: "center",
-            fontSize: 12,
-          },
-        };
-      },
-      render(value, record, index) {
-        const rootFile = record.RootFiles.filter(
-          (p) => p.name === "File Aspek Keuangan"
+          (p) => p.name === "File Kredit"
         );
         const files = rootFile.length === 0 ? [] : rootFile[0].Files;
         return <>{files.map((f) => f.name).join(",")}</>;
@@ -313,9 +251,9 @@ export default function TableDokumen() {
       },
     },
     {
-      title: "FILE KREDIT",
-      dataIndex: "fileKredit",
-      key: "fileKredit",
+      title: "FILE SLIK",
+      dataIndex: "fileSLIK",
+      key: "fileSLIK",
       className: "text-xs",
       width: 200,
       onHeaderCell: () => {
@@ -327,9 +265,7 @@ export default function TableDokumen() {
         };
       },
       render(value, record, index) {
-        const rootFile = record.RootFiles.filter(
-          (p) => p.name === "File Kredit"
-        );
+        const rootFile = record.RootFiles.filter((p) => p.name === "File SLIK");
         const files = rootFile.length === 0 ? [] : rootFile[0].Files;
         return <>{files.map((f) => f.name).join(",")}</>;
       },
@@ -357,6 +293,28 @@ export default function TableDokumen() {
       },
     },
     {
+      title: "FILE KEPATUHAN",
+      dataIndex: "fileKepatuhan",
+      key: "fileKepatuhan",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        const rootFile = record.RootFiles.filter(
+          (p) => p.name === "File Kepatuhan"
+        );
+        const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+        return <>{files.map((f) => f.name).join(",")}</>;
+      },
+    },
+    {
       title: "FILE CUSTODY",
       dataIndex: "fileCustody",
       key: "fileCustody",
@@ -378,6 +336,50 @@ export default function TableDokumen() {
         return <>{files.map((f) => f.name).join(",")}</>;
       },
     },
+    // {
+    //   title: "FILE MAUK",
+    //   dataIndex: "fileMAUK",
+    //   key: "fileMAUK",
+    //   className: "text-xs",
+    //   width: 200,
+    //   onHeaderCell: () => {
+    //     return {
+    //       ["style"]: {
+    //         textAlign: "center",
+    //         fontSize: 12,
+    //       },
+    //     };
+    //   },
+    //   render(value, record, index) {
+    //     const rootFile = record.RootFiles.filter((p) => p.name === "File MAUK");
+    //     const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+    //     return <>{files.map((f) => f.name).join(",")}</>;
+    //   },
+    // },
+
+    // {
+    //   title: "FILE ASPEK KEUANGAN",
+    //   dataIndex: "fileAspekKKeuangan",
+    //   key: "fileAspekKKeuangan",
+    //   className: "text-xs",
+    //   width: 200,
+    //   onHeaderCell: () => {
+    //     return {
+    //       ["style"]: {
+    //         textAlign: "center",
+    //         fontSize: 12,
+    //       },
+    //     };
+    //   },
+    //   render(value, record, index) {
+    //     const rootFile = record.RootFiles.filter(
+    //       (p) => p.name === "File Aspek Keuangan"
+    //     );
+    //     const files = rootFile.length === 0 ? [] : rootFile[0].Files;
+    //     return <>{files.map((f) => f.name).join(",")}</>;
+    //   },
+    // },
+
     {
       title: "LAST ACTIVITY",
       dataIndex: "lastactivity",

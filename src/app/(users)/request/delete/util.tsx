@@ -287,7 +287,11 @@ export default function TableDeletes() {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
             {hasAccess("update") && (
-              <ProsesDeleteFile data={record} getData={getData} />
+              <ProsesDeleteFile
+                data={record}
+                getData={getData}
+                hasAccess={hasAccess}
+              />
             )}
           </div>
         );
@@ -337,9 +341,11 @@ export default function TableDeletes() {
 const ProsesDeleteFile = ({
   data,
   getData,
+  hasAccess,
 }: {
   data: IPermohonanAction;
   getData: Function;
+  hasAccess: Function;
 }) => {
   const [open, setOpen] = useState(false);
   const user = useUser();
@@ -440,12 +446,7 @@ const ProsesDeleteFile = ({
                             .split(",")
                             .map(Number)
                             .includes(user?.id || 0);
-                          if (
-                            ["ADMINISTRATOR", "DEVELOPER"].includes(
-                              user?.role.roleName || ""
-                            ) ||
-                            filter
-                          ) {
+                          if (hasAccess("download") || filter) {
                             return true;
                           }
                           if (!f.allowDownload) return false;

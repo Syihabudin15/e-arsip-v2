@@ -567,12 +567,7 @@ const BerkasBerkas = ({ files }: { files: IRootFiles }) => {
                   <div className="h-[70vh]">
                     <MyPDFViewer
                       fileUrl={allFile}
-                      download={
-                        (user && user.role.roleName === "DEVELOPER") ||
-                        user?.role.roleName === "ADMINISTRATOR"
-                          ? true
-                          : false
-                      }
+                      download={hasAccess("download")}
                     />
                   </div>
                 )}
@@ -592,12 +587,7 @@ const BerkasBerkas = ({ files }: { files: IRootFiles }) => {
                         .split(",")
                         .map(Number)
                         .includes(user?.id || 0);
-                      if (
-                        ["ADMINISTRATOR", "DEVELOPER"].includes(
-                          user?.role.roleName || ""
-                        ) ||
-                        filter
-                      ) {
+                      if (hasAccess("download") || filter) {
                         return true;
                       }
                       if (!f.allowDownload) return false;

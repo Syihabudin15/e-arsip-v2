@@ -10,7 +10,7 @@ import {
 } from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
 import { MyPDFViewer } from "@/components/utils/LayoutUtil";
-import { hasAccess, useAccess } from "@/components/utils/PermissionUtil";
+import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   FolderOutlined,
   FormOutlined,
@@ -487,12 +487,7 @@ const ProsesDownloadFile = ({
                             .split(",")
                             .map(Number)
                             .includes(user?.id || 0);
-                          if (
-                            ["ADMINISTRATOR", "DEVELOPER"].includes(
-                              user?.role.roleName || ""
-                            ) ||
-                            filter
-                          ) {
+                          if (hasAccess("download") || filter) {
                             return true;
                           }
                           if (!f.allowDownload) return false;

@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { handleUnlock, isPdfProtected } from "./PDFUtils";
 import { usePathname } from "next/navigation";
-import { Files, RootFiles } from "@prisma/client";
+import { Files } from "@prisma/client";
 
 export const FormInput = (params: IFormInput) => {
   return (
@@ -57,6 +57,14 @@ export const FormInput = (params: IFormInput) => {
         {!params.type && (
           <Input
             value={params.value}
+            onChange={(e) => params.onChange && params.onChange(e.target.value)}
+            disabled={params.disable}
+          />
+        )}
+        {params.type === "number" && (
+          <Input
+            value={params.value}
+            type="number"
             onChange={(e) => params.onChange && params.onChange(e.target.value)}
             disabled={params.disable}
           />
