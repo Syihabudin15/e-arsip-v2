@@ -544,7 +544,7 @@ const ProsesDownloadFile = ({
                     />
                   )
                 )}
-              {data.statusAction !== StatusAction.APPROVED &&
+              {data.statusAction === StatusAction.PENDING &&
                 hasAccess("update")(
                   <>
                     <div className="p-2 font-bold bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50">

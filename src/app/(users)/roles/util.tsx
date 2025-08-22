@@ -270,7 +270,7 @@ const DeleteRole = ({
     if ("key" in data) {
       delete data.key;
     }
-    await fetch("/api/jenis-pemohon", {
+    await fetch("/api/role", {
       method: data ? "PUT" : "POST",
       body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
     })

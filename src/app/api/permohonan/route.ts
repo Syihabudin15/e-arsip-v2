@@ -118,7 +118,6 @@ export const PUT = async (req: NextRequest) => {
   const data: IPermohonanKredit = await req.json();
   try {
     const { id, JenisPemohon, User, RootFiles, ...permohonan } = data;
-    console.log(permohonan);
     await prisma.$transaction([
       prisma.permohonanKredit.update({ where: { id: id }, data: permohonan }),
       prisma.files.deleteMany({

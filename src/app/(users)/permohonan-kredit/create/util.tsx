@@ -23,17 +23,13 @@ export default function CreatePermohonanKredit({
   const [activity, setActivity] = useState<string[]>([]);
   const user = useUser();
   const [data, setData] = useState<IPermohonanKredit>(
-    record || {
-      ...defaultPermohonan,
-      userId: user ? user.id : defaultPermohonan.userId,
-      User: user ? user : defaultPermohonan.User,
-    }
+    record || defaultPermohonan
   );
   const { modal } = App.useApp();
 
   useEffect(() => {
-    setLoading(true);
     (async () => {
+      setLoading(true);
       await fetch("/api/jenis-pemohon")
         .then((res) => res.json())
         .then((res) => {
@@ -55,6 +51,8 @@ export default function CreatePermohonanKredit({
             if (res.status === 200) {
               setData({
                 ...data,
+                userId: user ? user.id : defaultPermohonan.userId,
+                User: user ? user : defaultPermohonan.User,
                 RootFiles: res.data.map((r: RootFiles) => ({
                   ...r,
                   Files: [],
@@ -63,18 +61,9 @@ export default function CreatePermohonanKredit({
             }
           });
       }
+      setLoading(false);
     })();
-    if (!record && user) {
-      setData({
-        ...data,
-        userId: user.id,
-        User: user,
-      });
-    }
-    setActivity([]);
-    setTempDesc(undefined);
-    setLoading(false);
-  }, []);
+  }, [user]);
 
   const handleSubmit = async () => {
     if (!data.JenisPemohon.name || !data.User.fullname)
@@ -253,7 +242,10 @@ export default function CreatePermohonanKredit({
               options={userss.map((u) => ({ label: u.fullname, value: u.id }))}
               style={{ width: "100%" }}
               value={data.userId}
-              disabled={user && user.role.roleName === "MARKETING"}
+              disabled={
+                user &&
+                ["MARKETING", "ACCOUNT OFFICER"].includes(user.role.roleName)
+              }
               onChange={(e) => {
                 const find = userss.filter((u) => u.id === e);
                 if (find.length === 0)
@@ -392,132 +384,6 @@ export default function CreatePermohonanKredit({
                 setActivity={record && setActivity}
               />
             ))}
-            {/* <FormUpload
-              data="File Identitas"
-              value={data.RootFiles}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileIdentitas: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File Kepatuhan"
-              value={data.Document.fileKepatuhan}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileKepatuhan: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File MAUK"
-              value={data.Document.fileMAUK}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileMAUK: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File Aspek Keuangan"
-              value={data.Document.fileAspekKKeuangan}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileAspekKKeuangan: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File SLIK"
-              value={data.Document.fileSLIK}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileSLIK: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File Jaminan"
-              value={data.Document.fileJaminan}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileJaminan: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File Kredit"
-              value={data.Document.fileKredit}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileKredit: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File Legal"
-              value={data.Document.fileLegal}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileLegal: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            />
-            <FormUpload
-              label="File Custody"
-              value={data.Document.fileCustody}
-              setChange={(e: string) =>
-                setData({
-                  ...data,
-                  Document: {
-                    ...data.Document,
-                    fileCustody: e,
-                  },
-                })
-              }
-              setActivity={record && setActivity}
-            /> */}
           </div>
           <div className="flex justify-end mt-5 mb-2 gap-4">
             <Button
