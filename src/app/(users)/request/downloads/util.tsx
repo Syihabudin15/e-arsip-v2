@@ -305,7 +305,7 @@ export default function TableDownload() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            {hasAccess("update") && (
+            {(hasAccess("update") || hasAccess("detail")) && (
               <ProsesDownloadFile
                 data={record}
                 getData={getData}
@@ -545,7 +545,7 @@ const ProsesDownloadFile = ({
                   )
                 )}
               {data.statusAction === StatusAction.PENDING &&
-                hasAccess("update")(
+                hasAccess("update") && (
                   <>
                     <div className="p-2 font-bold bg-gradient-to-br from-purple-500 to-blue-500 text-gray-50">
                       <p>PROSES PERMOHONAN</p>
@@ -721,6 +721,10 @@ const CreateDownloadFile = ({
                 (f) => ({
                   label: `${f.name} (${f.RootFiles.name})`,
                   value: f.url,
+                  disabled: f.allowDownload
+                    .split(",")
+                    .map(Number)
+                    .includes(user ? user?.id : 0),
                 })
               )}
               optionsMode="multiple"
