@@ -43,23 +43,47 @@ CREATE TABLE `JenisPemohon` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `PermohonanKredit` (
+CREATE TABLE `Pemohon` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `fullname` VARCHAR(191) NOT NULL,
     `NIK` VARCHAR(191) NULL,
     `purposeUse` VARCHAR(191) NULL,
     `accountNumber` VARCHAR(191) NULL,
+    `jenisPemohonId` INTEGER NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Produk` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `code` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `produkType` ENUM('TABUNGAN', 'DEPOSITO', 'KREDIT') NOT NULL,
+    `status` BOOLEAN NOT NULL DEFAULT true,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `Produk_code_key`(`code`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Permohonan` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
     `description` TEXT NULL,
     `activity` TEXT NULL,
     `status` BOOLEAN NOT NULL DEFAULT true,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `jenisPemohonId` INTEGER NOT NULL,
     `userId` INTEGER NOT NULL,
+    `pemohonId` INTEGER NULL,
+    `produkId` INTEGER NOT NULL,
 
-    INDEX `PermohonanKredit_jenisPemohonId_idx`(`jenisPemohonId`),
-    INDEX `PermohonanKredit_createdAt_idx`(`createdAt`),
-    INDEX `PermohonanKredit_userId_idx`(`userId`),
+    INDEX `Permohonan_produkId_idx`(`produkId`),
+    INDEX `Permohonan_pemohonId_idx`(`pemohonId`),
+    INDEX `Permohonan_createdAt_idx`(`createdAt`),
+    INDEX `Permohonan_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -67,6 +91,9 @@ CREATE TABLE `PermohonanKredit` (
 CREATE TABLE `RootFiles` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
+    `order` INTEGER NULL DEFAULT 1,
+    `produkType` ENUM('TABUNGAN', 'DEPOSITO', 'KREDIT') NOT NULL,
+    `resourceType` VARCHAR(191) NOT NULL,
 
     UNIQUE INDEX `RootFiles_name_key`(`name`),
     PRIMARY KEY (`id`)
@@ -80,7 +107,7 @@ CREATE TABLE `Files` (
     `allowDownload` TEXT NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `rootFilesId` INTEGER NOT NULL,
-    `permohonanKreditId` INTEGER NOT NULL,
+    `permohonanId` INTEGER NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -96,7 +123,11 @@ CREATE TABLE `PermohonanAction` (
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `requesterId` INTEGER NOT NULL,
     `approverId` INTEGER NULL,
+    `permohonanId` INTEGER NOT NULL,
 
+    INDEX `PermohonanAction_requesterId_idx`(`requesterId`),
+    INDEX `PermohonanAction_approverId_idx`(`approverId`),
+    INDEX `PermohonanAction_permohonanId_idx`(`permohonanId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -134,22 +165,31 @@ CREATE TABLE `_FilesToPermohonanAction` (
 ALTER TABLE `User` ADD CONSTRAINT `User_roleId_fkey` FOREIGN KEY (`roleId`) REFERENCES `Role`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PermohonanKredit` ADD CONSTRAINT `PermohonanKredit_jenisPemohonId_fkey` FOREIGN KEY (`jenisPemohonId`) REFERENCES `JenisPemohon`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Pemohon` ADD CONSTRAINT `Pemohon_jenisPemohonId_fkey` FOREIGN KEY (`jenisPemohonId`) REFERENCES `JenisPemohon`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `PermohonanKredit` ADD CONSTRAINT `PermohonanKredit_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Permohonan` ADD CONSTRAINT `Permohonan_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Permohonan` ADD CONSTRAINT `Permohonan_pemohonId_fkey` FOREIGN KEY (`pemohonId`) REFERENCES `Pemohon`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Permohonan` ADD CONSTRAINT `Permohonan_produkId_fkey` FOREIGN KEY (`produkId`) REFERENCES `Produk`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Files` ADD CONSTRAINT `Files_rootFilesId_fkey` FOREIGN KEY (`rootFilesId`) REFERENCES `RootFiles`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Files` ADD CONSTRAINT `Files_permohonanKreditId_fkey` FOREIGN KEY (`permohonanKreditId`) REFERENCES `PermohonanKredit`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Files` ADD CONSTRAINT `Files_permohonanId_fkey` FOREIGN KEY (`permohonanId`) REFERENCES `Permohonan`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `PermohonanAction` ADD CONSTRAINT `PermohonanAction_requesterId_fkey` FOREIGN KEY (`requesterId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `PermohonanAction` ADD CONSTRAINT `PermohonanAction_approverId_fkey` FOREIGN KEY (`approverId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PermohonanAction` ADD CONSTRAINT `PermohonanAction_permohonanId_fkey` FOREIGN KEY (`permohonanId`) REFERENCES `Permohonan`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Logs` ADD CONSTRAINT `Logs_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

@@ -4,8 +4,8 @@ import { useUser } from "@/components/contexts/UserContext";
 import {
   IDescription,
   IFiles,
+  IPermohonan,
   IPermohonanAction,
-  IPermohonanKredit,
   IUser,
 } from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
@@ -39,8 +39,8 @@ export default function TableDownload() {
   const [data, setData] = useState<IPermohonanAction[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const { access, hasAccess } = useAccess("/request/downloads");
-  const [dataKredit, setDataKredit] = useState<IPermohonanKredit[]>([]);
+  const { hasAccess } = useAccess("/request/downloads");
+  const [dataKredit, setDataKredit] = useState<IPermohonan[]>([]);
   const user = useUser();
 
   const getData = async () => {
@@ -63,7 +63,7 @@ export default function TableDownload() {
   useEffect(() => {
     (async () => {
       await getData();
-      await fetch(`/api/permohonan?page=1&pageSize=5000`)
+      await fetch(`/api/permohonan`)
         .then((res) => res.json())
         .then((res) => {
           setDataKredit(res.data);
@@ -151,9 +151,24 @@ export default function TableDownload() {
       },
     },
     {
-      title: "DATA KREDIT",
-      dataIndex: ["PermohonanKredit", "fullname"],
+      title: "DATA PERMOHONAN",
+      dataIndex: ["Permohonan", "Pemohon", "fullname"],
       key: "fullname",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
+      title: "NAMA PRODUK",
+      dataIndex: ["Permohonan", "Produk", "name"],
+      key: "produkName",
       className: "text-xs",
       width: 200,
       onHeaderCell: () => {
@@ -333,6 +348,7 @@ export default function TableDownload() {
                   data={dataKredit}
                   getData={getData}
                   user={user || null}
+                  setDataKredits={setDataKredit}
                 />
               )}
             </div>
@@ -426,7 +442,7 @@ const ProsesDownloadFile = ({
               description: `${
                 user?.fullname
               } Berhasil melakukan proses download file pada data permohonan ${
-                data.PermohonanKredit.fullname
+                data.Permohonan.Pemohon.fullname
               } dengan status ${data.statusAction}. ${
                 data.statusAction === StatusAction.APPROVED
                   ? `sekarang ${data.Requester.fullname} dapat mendownload berkas-berkas tersebut. <br/> Berikut detail dari data data yang telah disetujui untuk di download :`
@@ -513,7 +529,7 @@ const ProsesDownloadFile = ({
               />
               <FormInput
                 label="DATA KREDIT"
-                value={data.PermohonanKredit.fullname}
+                value={data.Permohonan.Pemohon.fullname}
                 disable
               />
               {data.RootFiles.map((rf) => (
@@ -598,14 +614,16 @@ const CreateDownloadFile = ({
   data,
   getData,
   user,
+  setDataKredits,
 }: {
-  data: IPermohonanKredit[];
+  data: IPermohonan[];
   getData: Function;
   user: IUser | null;
+  setDataKredits: Function;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<IPermohonanKredit>();
+  const [selected, setSelected] = useState<IPermohonan>();
   const [filesSelected, setFilesSelected] = useState<IFiles[]>([]);
   const [desc, setDesc] = useState<string>();
   const { modal } = App.useApp();
@@ -628,7 +646,7 @@ const CreateDownloadFile = ({
       updatedAt: new Date(),
       requesterId: user?.id || 0,
       approverId: null,
-      permohonanKreditId: selected ? selected.id : 0,
+      permohonanId: selected ? selected.id : 0,
       Files: filesSelected,
     };
     await fetch("/api/request", {
@@ -649,7 +667,7 @@ const CreateDownloadFile = ({
               description: `${
                 user?.fullname
               } berhasil mengajukan permohonan download file baru untuk data kredit ${
-                selected?.fullname
+                selected?.Pemohon.fullname
               } <br/><br/> ${filesSelected.map((f) => f.name).join(",")}`,
             }),
           });
@@ -664,6 +682,16 @@ const CreateDownloadFile = ({
         modal.error({ title: "ERROR", content: "Internal Server Error" });
       });
     setLoading(false);
+  };
+
+  const handleSearch = async (e: string) => {
+    if (!e) return;
+    await fetch(`/api/permohonan?search=${e}`)
+      .then((res) => res.json())
+      .then((res) => {
+        setDataKredits(res.data);
+      })
+      .catch((err) => console.log(err));
   };
 
   return (
@@ -687,7 +715,7 @@ const CreateDownloadFile = ({
       >
         <div className="flex flex-col gap-1">
           <FormInput
-            label="Data Kredit"
+            label="Data Permohonan"
             type="option"
             value={selected?.id}
             onChange={(e: any) => {
@@ -695,7 +723,11 @@ const CreateDownloadFile = ({
               if (find.length === 0) return alert("Invalid Data Kredit");
               setSelected(find[0]);
             }}
-            options={data.map((d) => ({ label: d.fullname, value: d.id }))}
+            options={data.map((d) => ({
+              label: `${d.Pemohon.fullname} (${d.Produk.name})`,
+              value: d.id,
+            }))}
+            onSearch={(e: string) => handleSearch(e)}
           />
           {selected && (
             <FormInput

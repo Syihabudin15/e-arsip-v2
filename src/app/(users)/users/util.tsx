@@ -84,6 +84,21 @@ export default function TableUser() {
       },
     },
     {
+      title: "USER ID",
+      dataIndex: "id",
+      key: "id",
+      className: "text-xs text-center",
+      width: 100,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
       title: "ROLE NAME",
       dataIndex: "roleName",
       key: "roleName",

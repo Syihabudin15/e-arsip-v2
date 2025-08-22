@@ -24,6 +24,12 @@ enum ENeedAction {
   DELETE
 }
 
+enum EProdukType {
+  TABUNGAN
+  DEPOSITO
+  KREDIT
+}
+
 model Role {
   id         Int    @id @default(autoincrement())
   roleName   String @unique
@@ -43,15 +49,15 @@ model User {
   email    String
   photo    String?
 
-  status           Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @default(now())
-  role             Role               @relation(fields: [roleId], references: [id])
-  roleId           Int
-  Logs             Logs[]
-  PermohonanKredit PermohonanKredit[]
-  ReuestMade       PermohonanAction[] @relation("RequesterRelation")
-  ApprovMade       PermohonanAction[] @relation("ApproverRelation")
+  status     Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @default(now())
+  role       Role               @relation(fields: [roleId], references: [id])
+  roleId     Int
+  Logs       Logs[]
+  ReuestMade PermohonanAction[] @relation("RequesterRelation")
+  ApprovMade PermohonanAction[] @relation("ApproverRelation")
+  Permohonan Permohonan[]
 
   @@index([roleId])
 }
@@ -61,40 +67,68 @@ model JenisPemohon {
   name       String @unique
   keterangan String @db.Text
 
-  status           Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @default(now())
-  PermohonanKredit PermohonanKredit[]
+  status    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+  Pemohon   Pemohon[]
 }
 
-model PermohonanKredit {
-  id            Int     @id @default(autoincrement())
-  fullname      String
-  NIK           String?
-  purposeUse    String?
-  accountNumber String?
-  description   String? @db.Text
-  activity      String? @db.Text
+model Pemohon {
+  id             Int          @id @default(autoincrement())
+  fullname       String
+  NIK            String?
+  accountNumber  String       @unique
+  JenisPemohon   JenisPemohon @relation(fields: [jenisPemohonId], references: [id])
+  jenisPemohonId Int
+  Permohonan     Permohonan[]
+
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model Produk {
+  id         Int         @id @default(autoincrement())
+  code       String      @unique
+  name       String
+  produkType EProdukType
+
+  status     Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now())
+  Permohonan Permohonan[]
+}
+
+model Permohonan {
+  id          Int     @id @default(autoincrement())
+  purposeUse  String?
+  description String? @db.Text
+  activity    String? @db.Text
 
   status           Boolean            @default(true)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @default(now())
-  JenisPemohon     JenisPemohon       @relation(fields: [jenisPemohonId], references: [id])
   User             User               @relation(fields: [userId], references: [id])
-  jenisPemohonId   Int
-  userId           Int
-  Files            Files[]
   PermohonanAction PermohonanAction[]
+  Files            Files[]
+  Pemohon          Pemohon            @relation(fields: [pemohonId], references: [id])
+  Produk           Produk             @relation(fields: [produkId], references: [id])
+  userId           Int
+  pemohonId        Int
+  produkId         Int
 
-  @@index([jenisPemohonId])
+  @@index([produkId])
+  @@index([pemohonId])
   @@index([createdAt])
   @@index([userId])
 }
 
 model RootFiles {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  order Int?   @default(1)
+  id           Int         @id @default(autoincrement())
+  name         String      @unique
+  order        Int?        @default(1)
+  produkType   EProdukType
+  resourceType String
 
   Files Files[]
 }
@@ -105,13 +139,13 @@ model Files {
   url           String
   allowDownload String @db.Text
 
-  createdAt          DateTime          @default(now())
-  RootFiles          RootFiles         @relation(fields: [rootFilesId], references: [id])
-  PermohonanKredit   PermohonanKredit? @relation(fields: [permohonanKreditId], references: [id])
-  rootFilesId        Int
-  permohonanKreditId Int?
+  createdAt   DateTime    @default(now())
+  RootFiles   RootFiles   @relation(fields: [rootFilesId], references: [id])
+  rootFilesId Int
+  Permohonan  Permohonan? @relation(fields: [permohonanId], references: [id])
 
   PermohonanAction PermohonanAction[]
+  permohonanId     Int?
 }
 
 model PermohonanAction {
@@ -120,18 +154,22 @@ model PermohonanAction {
   description  String?      @db.Text
   action       ENeedAction
 
-  status           Boolean          @default(true)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @default(now())
-  Requester        User             @relation("RequesterRelation", fields: [requesterId], references: [id])
-  Approver         User?            @relation("ApproverRelation", fields: [approverId], references: [id])
-  PermohonanKredit PermohonanKredit @relation(fields: [permohonanKreditId], references: [id])
+  status     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @default(now())
+  Requester  User       @relation("RequesterRelation", fields: [requesterId], references: [id])
+  Approver   User?      @relation("ApproverRelation", fields: [approverId], references: [id])
+  Permohonan Permohonan @relation(fields: [permohonanId], references: [id])
 
   Files Files[] // banyak Files
 
-  requesterId        Int
-  approverId         Int?
-  permohonanKreditId Int  @default(1)
+  requesterId  Int
+  approverId   Int?
+  permohonanId Int
+
+  @@index([requesterId])
+  @@index([approverId])
+  @@index([permohonanId])
 }
 
 model Logs {
@@ -142,7 +180,6 @@ model Logs {
   path         String
   serverIP     String
   userAgent    String?
-  sendData     String  @db.Text
   returnStatus String
   detail       String? @db.Text
 

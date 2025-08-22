@@ -1,12 +1,12 @@
 import { Metadata } from "next";
-import { TablePermohonanKredit } from ".";
+import { TablePermohonan } from ".";
 
 export const metadata: Metadata = { title: "Permohonan Kredit" };
 
 export default function Page() {
   return (
     <div>
-      <TablePermohonanKredit />
+      <TablePermohonan type="KREDIT" />
     </div>
   );
 }

@@ -27,7 +27,7 @@ export default function DashboardMaster() {
   const columnsPermohonan = [
     {
       title: "MARKETING",
-      dataIndex: ["Document", "User", ["fullname"]],
+      dataIndex: ["User", "fullname"],
       key: "marketingName",
       className: "text-xs",
       width: 200,
@@ -42,7 +42,7 @@ export default function DashboardMaster() {
     },
     {
       title: "NAMA LENGKAP",
-      dataIndex: "fullname",
+      dataIndex: ["Pemohon", "fullname"],
       key: "fullname",
       className: "text-xs",
       width: 200,
@@ -56,8 +56,23 @@ export default function DashboardMaster() {
       },
     },
     {
+      title: "NO CIF",
+      dataIndex: ["Pemohon", "accountNumber"],
+      key: "cif",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center" as React.CSSProperties["textAlign"],
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
       title: "NIK",
-      dataIndex: "NIK",
+      dataIndex: ["Pemohon", "NIK"],
       key: "NIK",
       className: "text-xs",
       width: 200,
@@ -72,8 +87,23 @@ export default function DashboardMaster() {
     },
     {
       title: "JENIS PEMOHON",
-      dataIndex: ["JenisPemohon", "name"],
+      dataIndex: ["Pemohon", "JenisPemohon", "name"],
       key: "jenis",
+      className: "text-xs",
+      width: 150,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center" as React.CSSProperties["textAlign"],
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
+      title: "PRODUK",
+      dataIndex: ["Produk", "name"],
+      key: "produk",
       className: "text-xs",
       width: 150,
       onHeaderCell: () => {
@@ -195,7 +225,7 @@ export default function DashboardMaster() {
               },
             }}
           >
-            <p className="font-bold text-xl">{cards.totalUsers}</p>
+            <p className="font-bold text-xl text-center">{cards.totalUsers}</p>
           </Card>
         </Col>
         <Col span={6} xs={12} md={8} lg={6}>
@@ -209,7 +239,39 @@ export default function DashboardMaster() {
               },
             }}
           >
-            <p className="font-bold text-xl">{cards.totalRoles}</p>
+            <p className="font-bold text-xl  text-center">{cards.totalRoles}</p>
+          </Card>
+        </Col>
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Pemohon"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
+            <p className="font-bold text-xl  text-center">
+              {cards.totalPemohon}
+            </p>
+          </Card>
+        </Col>
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Produk"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
+            <p className="font-bold text-xl  text-center">
+              {cards.totalProduk}
+            </p>
           </Card>
         </Col>
         <Col span={6} xs={12} md={8} lg={6}>
@@ -223,7 +285,57 @@ export default function DashboardMaster() {
               },
             }}
           >
-            <p className="font-bold text-xl">{cards.totalDocuments}</p>
+            <p className="font-bold text-xl  text-center">
+              {cards.totalDocuments}
+            </p>
+          </Card>
+        </Col>
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Kredit"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
+            <p className="font-bold text-xl  text-center">
+              {cards.totalKredit}
+            </p>
+          </Card>
+        </Col>
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Tabungan"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
+            <p className="font-bold text-xl  text-center">
+              {cards.totalTabungan}
+            </p>
+          </Card>
+        </Col>
+        <Col span={6} xs={12} md={8} lg={6}>
+          <Card
+            title="Total Deposito"
+            styles={{
+              header: {
+                background: "linear-gradient(135deg, #3b82f6, #9333ea)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+              },
+            }}
+          >
+            <p className="font-bold text-xl  text-center">
+              {cards.totalDeposito}
+            </p>
           </Card>
         </Col>
         <Col span={6} xs={12} md={8} lg={6}>
@@ -237,7 +349,9 @@ export default function DashboardMaster() {
               },
             }}
           >
-            <p className="font-bold text-xl">{cards.totalPermohonanHariIni}</p>
+            <p className="font-bold text-xl  text-center">
+              {cards.totalPermohonanHariIni}
+            </p>
           </Card>
         </Col>
       </Row>

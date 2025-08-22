@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { UpdatePermohonanKredit } from ".";
+import UpdatePermohonanKredit from "./util";
 
 export const metadata: Metadata = { title: "Update Permohonan Kredit" };
 

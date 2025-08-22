@@ -1,8 +1,9 @@
 "use client";
 
 import {
+  EditActivity,
   IDescription,
-  IPermohonanKredit,
+  IPermohonan,
   IRootFiles,
   IUser,
 } from "@/components/IInterfaces";
@@ -10,11 +11,21 @@ import { FilterOption, FormInput } from "@/components/utils/FormUtils";
 import {
   DeleteOutlined,
   FolderOutlined,
+  FormOutlined,
   LoadingOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
-import { JenisPemohon } from "@prisma/client";
-import { Button, Input, Modal, Table, TableProps, Tabs } from "antd";
+import { EProdukType, JenisPemohon, Produk } from "@prisma/client";
+import {
+  App,
+  Button,
+  Input,
+  Modal,
+  Table,
+  TableProps,
+  Tabs,
+  Typography,
+} from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { PDFDocument } from "pdf-lib";
@@ -22,6 +33,7 @@ import { useAccess } from "@/components/utils/PermissionUtil";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useUser } from "@/components/contexts/UserContext";
+import { usePathname } from "next/navigation";
 const MyPDFViewer = dynamic(
   () => import("@/components/utils/LayoutUtil").then((d) => d.MyPDFViewer),
   {
@@ -29,29 +41,35 @@ const MyPDFViewer = dynamic(
     loading: () => <LoadingOutlined />,
   }
 );
+const { Paragraph } = Typography;
 
-export default function TablePermohonanKredit() {
+export default function TablePermohonanKredit({ type }: { type: EProdukType }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState<string>();
   const [jenisId, setJenisId] = useState<number>();
-  const [data, setData] = useState<IPermohonanKredit[]>([]);
+  const [produkId, setProdukId] = useState<number>();
+  const [data, setData] = useState<IPermohonan[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
-  const { access, hasAccess } = useAccess("/permohonan-kredit");
+  const pathname = usePathname();
+  const { hasAccess } = useAccess(pathname);
   const user = useUser();
+  const [produks, setProduks] = useState<Produk[]>([]);
 
   const getData = async () => {
     setLoading(true);
     await fetch(
       `/api/permohonan?page=${page}&pageSize=${pageSize}${
         search ? "&search=" + search : ""
-      }${jenisId ? "&jenisId=" + jenisId : ""}`
+      }${jenisId ? "&jenisId=" + jenisId : ""}&produkType=${type}${
+        produkId ? "&produkId=" + produkId : ""
+      }`
     )
       .then((res) => res.json())
       .then((res) => {
-        setData(res.data.map((d: IPermohonanKredit) => ({ ...d, key: d.id })));
+        setData(res.data);
         setTotal(res.total);
       })
       .catch((err) => console.log(err));
@@ -67,6 +85,11 @@ export default function TablePermohonanKredit() {
           if (res.status === 200)
             setJeniss(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
         });
+      await fetch("/api/produk?produkType=" + type)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 200) setProduks(res.data);
+        });
     })();
   }, []);
 
@@ -75,9 +98,9 @@ export default function TablePermohonanKredit() {
       await getData();
     }, 200);
     return () => clearTimeout(timeout);
-  }, [search, page, pageSize, jenisId]);
+  }, [search, page, pageSize, jenisId, produkId]);
 
-  const columns: TableProps<IPermohonanKredit>["columns"] = [
+  const columns: TableProps<IPermohonan>["columns"] = [
     {
       title: "NO",
       dataIndex: "no",
@@ -95,12 +118,13 @@ export default function TablePermohonanKredit() {
       render(value, record, index) {
         return <>{(page - 1) * pageSize + (index + 1)}</>;
       },
+      fixed: window && window.innerWidth > 600 ? "left" : false,
     },
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 50,
+      title: "NO CIF",
+      dataIndex: ["Pemohon", "accountNumber"],
+      key: "accountNumber",
+      width: 100,
       className: "text-xs text-center",
       onHeaderCell: () => {
         return {
@@ -110,13 +134,11 @@ export default function TablePermohonanKredit() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.id}</>;
-      },
+      fixed: window && window.innerWidth > 600 ? "left" : false,
     },
     {
       title: "NAMA PEMOHON",
-      dataIndex: "fullname",
+      dataIndex: ["Pemohon", "fullname"],
       key: "fullname",
       className: "text-xs",
       width: 200,
@@ -128,13 +150,11 @@ export default function TablePermohonanKredit() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.fullname}</>;
-      },
+      fixed: window && window.innerWidth > 600 ? "left" : false,
     },
     {
       title: "NOMOR NIK",
-      dataIndex: "nik",
+      dataIndex: ["Pemohon", "NIK"],
       key: "nik",
       className: "text-xs",
       width: 200,
@@ -146,16 +166,13 @@ export default function TablePermohonanKredit() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.NIK && record.NIK}</>;
-      },
     },
     {
-      title: "JENIS PEMOHON",
-      dataIndex: "jenisPemohon",
-      key: "jenisPemohon",
+      title: "PRODUK",
+      dataIndex: ["Produk", "name"],
+      key: "produk",
       className: "text-xs",
-      width: 200,
+      width: 150,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -164,8 +181,20 @@ export default function TablePermohonanKredit() {
           },
         };
       },
-      render(value, record, index) {
-        return <>{record.JenisPemohon.name}</>;
+    },
+    {
+      title: "JENIS PEMOHON",
+      dataIndex: ["Pemohon", "JenisPemohon", "name"],
+      key: "jenisPemohon",
+      className: "text-xs",
+      width: 150,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
       },
     },
     {
@@ -173,7 +202,7 @@ export default function TablePermohonanKredit() {
       dataIndex: "purposeUse",
       key: "purposeUse",
       className: "text-xs",
-      width: 200,
+      width: 150,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -181,6 +210,84 @@ export default function TablePermohonanKredit() {
             fontSize: 12,
           },
         };
+      },
+    },
+    {
+      title: "LAST ACTIVITY",
+      dataIndex: "activity",
+      key: "activity",
+      className: "text-xs",
+      width: 300,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        const parse = record.activity
+          ? (JSON.parse(record.activity) as EditActivity[])
+          : [];
+        return (
+          <>
+            <Paragraph
+              ellipsis={{
+                rows: 2,
+                expandable: "collapsible",
+              }}
+              style={{ fontSize: 11 }}
+            >
+              {parse.map((p) => (
+                <>
+                  {"{"}
+                  {p.time} | {p.desc}
+                  {"};"} <br />
+                  <br />
+                </>
+              ))}
+            </Paragraph>
+          </>
+        );
+      },
+    },
+    {
+      title: "BERKAS BERKAS",
+      dataIndex: "files",
+      key: "files",
+      className: "text-xs",
+      width: 300,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        return (
+          <>
+            <Paragraph
+              ellipsis={{
+                rows: 2,
+                expandable: "collapsible",
+              }}
+              style={{ fontSize: 11 }}
+            >
+              {record.RootFiles.filter((rf) => rf.Files.length !== 0).map(
+                (rf) => (
+                  <>
+                    {"{"}
+                    {rf.name} : [{rf.Files.map((f) => f.name).join(", ")}]{"};"}{" "}
+                    <br />
+                  </>
+                )
+              )}
+            </Paragraph>
+          </>
+        );
       },
     },
     {
@@ -236,9 +343,37 @@ export default function TablePermohonanKredit() {
       render(value, record, index) {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
-            {hasAccess("detail") && <DetailPermohonan data={record} />}
+            {hasAccess("detail") && (
+              <DetailPermohonan data={record} hasAccess={hasAccess} />
+            )}
             {user && (
               <>
+                {hasAccess("delete") && (
+                  <Button
+                    onClick={() =>
+                      window &&
+                      window.location.replace(
+                        `/permohonan-${type.toLowerCase()}/delete/` + record.id
+                      )
+                    }
+                    icon={<DeleteOutlined />}
+                    size="small"
+                    danger
+                  ></Button>
+                )}
+                {hasAccess("update") && (
+                  <Button
+                    onClick={() =>
+                      window &&
+                      window.location.replace(
+                        `/permohonan-${type.toLowerCase()}/` + record.id
+                      )
+                    }
+                    icon={<FormOutlined />}
+                    type="primary"
+                    size="small"
+                  ></Button>
+                )}
                 {hasAccess("delete") && (
                   <DeletePermohonan
                     data={record}
@@ -259,12 +394,12 @@ export default function TablePermohonanKredit() {
       title={() => (
         <div>
           <div className="border-b border-blue-500 py-2">
-            <h1 className="font-bold text-xl">Permohonan Kredit</h1>
+            <h1 className="font-bold text-xl">DATA {type}</h1>
           </div>
           <div className="flex my-2 gap-2 justify-between overflow-auto">
             <div className="flex gap-2">
               {hasAccess("write") && (
-                <Link href={"/permohonan-kredit/create"}>
+                <Link href={`/permohonan-${type.toLocaleLowerCase()}/create`}>
                   <Button
                     icon={<PlusCircleOutlined />}
                     type="primary"
@@ -278,6 +413,12 @@ export default function TablePermohonanKredit() {
                 items={jeniss.map((j) => ({ label: j.name, value: j.id }))}
                 value={jenisId}
                 onChange={(e: number) => setJenisId(e)}
+                width={150}
+              />
+              <FilterOption
+                items={produks.map((j) => ({ label: j.name, value: j.id }))}
+                value={produkId}
+                onChange={(e: number) => setProdukId(e)}
                 width={150}
               />
             </div>
@@ -311,17 +452,18 @@ export default function TablePermohonanKredit() {
   );
 }
 
-const DeletePermohonan = ({
+export const DeletePermohonan = ({
   data,
   getData,
   user,
 }: {
-  data: IPermohonanKredit;
+  data: IPermohonan;
   getData: Function;
   user: IUser;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { modal } = App.useApp();
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -329,33 +471,37 @@ const DeletePermohonan = ({
       delete data.key;
     }
     await fetch("/api/permohonan", {
-      method: "PUT",
-      body: JSON.stringify({ ...data, status: false, updatedAt: new Date() }),
+      method: "DELETE",
+      body: JSON.stringify({
+        id: data.id,
+        status: false,
+        updatedAt: new Date(),
+      }),
     })
       .then((res) => res.json())
       .then(async (res) => {
         if (res.status === 201 || res.status === 200) {
-          Modal.success({
+          modal.success({
             title: "BERHASIL",
-            content: `Data ${data && data.fullname} berhasil dihapus`,
+            content: `Data ${data && data.Pemohon.fullname} berhasil dihapus`,
           });
           setOpen(false);
           getData();
           await fetch("/api/sendEmail", {
             method: "POST",
             body: JSON.stringify({
-              subject: `Permohonan Kredit ${data.fullname} Dihapus`,
-              description: `${user?.fullname} Berhasil menghapus data Permohonan Kredit ${data.fullname}`,
+              subject: `Permohonan ${data.Pemohon.fullname} Dihapus`,
+              description: `${user?.fullname} Berhasil menghapus data Permohonan  ${data.Pemohon.fullname}`,
             }),
           });
           return;
         }
-        Modal.error({ title: "ERROR", content: res.msg });
+        modal.error({ title: "ERROR", content: res.msg });
         setLoading(false);
       })
       .catch((err) => {
         console.log(err);
-        Modal.error({ title: "ERROR", content: "Internal Server Error" });
+        modal.error({ title: "ERROR", content: "Internal Server Error" });
       });
     setLoading(false);
   };
@@ -370,7 +516,7 @@ const DeletePermohonan = ({
         loading={loading}
       ></Button>
       <Modal
-        title={`HAPUS PERMOHONAN KREDIT ${data.fullname.toUpperCase()}`}
+        title={`HAPUS PERMOHONAN ${data.Pemohon.fullname.toUpperCase()}`}
         open={open}
         onCancel={() => setOpen(false)}
         onOk={() => handleSubmit()}
@@ -385,7 +531,13 @@ const DeletePermohonan = ({
   );
 };
 
-export const DetailPermohonan = ({ data }: { data: IPermohonanKredit }) => {
+export const DetailPermohonan = ({
+  data,
+  hasAccess,
+}: {
+  data: IPermohonan;
+  hasAccess: Function;
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -397,7 +549,7 @@ export const DetailPermohonan = ({ data }: { data: IPermohonanKredit }) => {
         onClick={() => setOpen(true)}
       ></Button>
       <Modal
-        title={`DETAIL ${data.fullname}`}
+        title={`DETAIL ${data.Pemohon.fullname}`}
         open={open}
         footer={[]}
         onCancel={() => setOpen(false)}
@@ -408,7 +560,7 @@ export const DetailPermohonan = ({ data }: { data: IPermohonanKredit }) => {
           <div className="w-full sm:flex-1 h-full overflow-auto">
             <DataPemohon data={data} />
           </div>
-          <div className="w-full sm:flex-1 overflow-auto sm:border-l rounded">
+          <div className="w-full sm:flex-1/3 overflow-auto sm:border-l rounded">
             <Tabs
               items={data.RootFiles.map((d) => ({
                 label: d.name,
@@ -420,7 +572,7 @@ export const DetailPermohonan = ({ data }: { data: IPermohonanKredit }) => {
                         Belum ada data diUpload
                       </div>
                     ) : (
-                      <BerkasBerkas files={d} />
+                      <BerkasBerkas files={d} hasAccess={hasAccess} />
                     )}
                   </div>
                 ),
@@ -436,7 +588,7 @@ export const DetailPermohonan = ({ data }: { data: IPermohonanKredit }) => {
   );
 };
 
-const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
+const DataPemohon = ({ data }: { data: IPermohonan }) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="p-2 rounded bg-gradient-to-br from-blue-500 to-purple-500 font-bold text-gray-50">
@@ -451,7 +603,11 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
       <div className="flex flex-row items-center justify-between gap-2">
         <div>Nama Permohonan</div>
         <div>
-          <Input disabled value={data.fullname} style={{ color: "GrayText" }} />
+          <Input
+            disabled
+            value={data.Pemohon.fullname}
+            style={{ color: "GrayText" }}
+          />
         </div>
       </div>
       <div className="flex flex-row items-center justify-between gap-2">
@@ -459,17 +615,17 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
         <div>
           <Input
             disabled
-            value={data.NIK || ""}
+            value={data.Pemohon.NIK || ""}
             style={{ color: "GrayText" }}
           />
         </div>
       </div>
       <div className="flex flex-row items-center justify-between gap-2">
-        <div>NO Rekening</div>
+        <div>NO CIF</div>
         <div>
           <Input
             disabled
-            value={data.accountNumber || ""}
+            value={data.Pemohon.accountNumber || ""}
             style={{ color: "GrayText" }}
           />
         </div>
@@ -479,7 +635,7 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
         <div>
           <Input
             disabled
-            value={data.JenisPemohon.name}
+            value={data.Pemohon.JenisPemohon.name}
             style={{ color: "GrayText" }}
           />
         </div>
@@ -537,8 +693,13 @@ const DataPemohon = ({ data }: { data: IPermohonanKredit }) => {
   );
 };
 
-const BerkasBerkas = ({ files }: { files: IRootFiles }) => {
-  const { access, hasAccess } = useAccess("/permohonan-kredit");
+const BerkasBerkas = ({
+  files,
+  hasAccess,
+}: {
+  files: IRootFiles;
+  hasAccess: Function;
+}) => {
   const user = useUser();
   const [allFile, setAllFile] = useState<string>();
 

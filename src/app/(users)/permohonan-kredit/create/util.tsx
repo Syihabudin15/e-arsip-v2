@@ -3,29 +3,40 @@ import {
   EditActivity,
   IDescription,
   IFiles,
-  IPermohonanKredit,
+  IPermohonan,
 } from "@/components/IInterfaces";
 import { FormInput, FormUpload } from "@/components/utils/FormUtils";
-import { Files, JenisPemohon, RootFiles, User } from "@prisma/client";
+import {
+  EProdukType,
+  Files,
+  JenisPemohon,
+  Pemohon,
+  Produk,
+  RootFiles,
+  User,
+} from "@prisma/client";
 import { App, Button, Select, Spin } from "antd";
 import moment from "moment";
 import { useEffect, useState } from "react";
 
-export default function CreatePermohonanKredit({
+export default function CreatePermohonan({
   record,
+  type,
 }: {
-  record?: IPermohonanKredit;
+  record?: IPermohonan;
+  type: EProdukType;
 }) {
   const [jeniss, setJenis] = useState<JenisPemohon[]>([]);
   const [userss, setUserss] = useState<User[]>([]);
+  const [pemohons, setPemohons] = useState<Pemohon[]>([]);
+  const [produks, setProduks] = useState<Produk[]>([]);
   const [loading, setLoading] = useState(false);
   const [tempDesc, setTempDesc] = useState<string>();
   const [activity, setActivity] = useState<string[]>([]);
   const user = useUser();
-  const [data, setData] = useState<IPermohonanKredit>(
-    record || defaultPermohonan
-  );
+  const [data, setData] = useState<IPermohonan>(record || defaultPermohonan);
   const { modal } = App.useApp();
+  const [disableEdit, setDisableEdit] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -34,18 +45,32 @@ export default function CreatePermohonanKredit({
         .then((res) => res.json())
         .then((res) => {
           if (res.status === 200) {
-            setJenis(res.data.map((d: JenisPemohon) => ({ ...d, key: d.id })));
+            setJenis(res.data);
           }
         });
-      await fetch("/api/user")
+      await fetch("/api/user?pageSize=500")
         .then((res) => res.json())
         .then((res) => {
           if (res.status === 200) {
-            setUserss(res.data.map((d: User) => ({ ...d, key: d.id })));
+            setUserss(res.data);
+          }
+        });
+      await fetch(`/api/pemohon`)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 200) {
+            setPemohons(res.data);
+          }
+        });
+      await fetch("/api/produk?pageSize=100&produkType=" + type)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === 200) {
+            setProduks(res.data);
           }
         });
       if (!record) {
-        await fetch("/api/rootfiles")
+        await fetch("/api/rootfiles?produkType=" + type)
           .then((res) => res.json())
           .then((res) => {
             if (res.status === 200) {
@@ -66,13 +91,13 @@ export default function CreatePermohonanKredit({
   }, [user]);
 
   const handleSubmit = async () => {
-    if (!data.JenisPemohon.name || !data.User.fullname)
+    if (!data.Pemohon.accountNumber || !data.userId)
       return alert("Mohon lengkapi data terlebih dahulu");
     setLoading(true);
     if ("key" in data) {
       delete data.key;
     }
-    if (record && activity) {
+    if (activity) {
       const temp = data.activity
         ? (JSON.parse(data.activity) as EditActivity[])
         : [];
@@ -107,13 +132,13 @@ export default function CreatePermohonanKredit({
           await fetch("/api/sendEmail", {
             method: "POST",
             body: JSON.stringify({
-              subject: `${record ? "Update" : ""} Permohonan Kredit ${
+              subject: `${record ? "Update" : ""} Permohonan ${type} ${
                 !record ? "Baru" : ""
-              } ${data.fullname}`,
+              } ${data.Pemohon.fullname}`,
               description: `${user?.fullname} Berhasil ${
                 record ? "update" : "menambahkan"
-              } data Permohonan Kredit ${!record ? "baru" : ""} ${
-                data.fullname
+              } data Permohonan ${type} ${!record ? "baru" : ""} ${
+                data.Pemohon.fullname
               }<br/> ${activity && activity.join(",")}`,
             }),
           });
@@ -136,6 +161,17 @@ export default function CreatePermohonanKredit({
     setLoading(false);
   };
 
+  const handleSearch = async (e: string) => {
+    await fetch(`/api/pemohon?search=${e}`)
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 200) {
+          setPemohons(res.data);
+        }
+      })
+      .catch((err) => console.log(err));
+  };
+
   return (
     <Spin spinning={loading}>
       <div
@@ -147,66 +183,121 @@ export default function CreatePermohonanKredit({
           </div>
           <FormInput
             label="Nama Pemohon"
-            value={data.fullname}
-            onChange={(e: string) => {
-              setData({ ...data, fullname: e });
-              if (record) {
-                const txt = `Edit Nama Pemohon (${record.fullname} to ${e})`;
-                setActivity((prev) => {
-                  prev = prev
-                    ? prev.filter((p) => !p.includes("Edit Nama Pemohon"))
-                    : [];
-                  prev.push(txt);
-                  return prev;
+            type="option"
+            optionsMode="tags"
+            optionLength={1}
+            value={data.pemohonId !== 0 ? [String(data.pemohonId)] : undefined}
+            onSearch={(e: string) => handleSearch(e)}
+            onChange={(e: any) => {
+              const find = pemohons.filter((p) => p.id === Number(e[0]));
+              if (find.length !== 0) {
+                setDisableEdit(true);
+                setData({
+                  ...data,
+                  pemohonId: find[0].id,
+                  Pemohon: {
+                    ...find[0],
+                    JenisPemohon: { ...data.Pemohon.JenisPemohon },
+                  },
                 });
+              } else {
+                if (e.length === 0) {
+                  setData({
+                    ...data,
+                    Pemohon: defaultPermohonan.Pemohon,
+                    pemohonId: 0,
+                  });
+                } else {
+                  setData({
+                    ...data,
+                    Pemohon: {
+                      ...data.Pemohon,
+                      fullname: e[0],
+                    },
+                  });
+                }
+                setDisableEdit(false);
               }
+              const txt = `${record ? "Edit" : "Tambah"} Nama Pemohon (${
+                record ? record.Pemohon.fullname : ""
+              } ${record ? "to" : ""} ${e})`;
+              setActivity((prev) => {
+                prev = prev
+                  ? prev.filter(
+                      (p) =>
+                        !p.includes(
+                          `${record ? "Edit" : "Tambah"} Nama Pemohon`
+                        )
+                    )
+                  : [];
+                prev.push(txt);
+                return prev;
+              });
             }}
+            options={pemohons.map((p) => ({
+              label: `${p.fullname} | ${p.NIK} (${p.accountNumber})`,
+              value: String(p.id),
+            }))}
             align="col"
             width={"48%"}
             required
+            disable={record ? true : false}
           />
           <FormInput
             label="Nomor NIK"
-            value={data.NIK}
-            type="number"
-            onChange={(e: string) => {
-              setData({ ...data, NIK: String(e) });
-              if (record) {
-                const txt = `Edit NIK (${record.NIK} to ${e})`;
-                setActivity((prev) => {
-                  prev = prev
-                    ? prev.filter((p) => !p.includes("Edit NIK"))
-                    : [];
-                  prev.push(txt);
-                  return prev;
-                });
-              }
-            }}
-            align="col"
-            width={"48%"}
-          />
-          <FormInput
-            label="Nomor Rekening"
-            value={data.accountNumber}
+            value={data.Pemohon.NIK}
             type="number"
             onChange={(e: string) => {
               setData({
                 ...data,
-                accountNumber: String(e),
+                Pemohon: { ...data.Pemohon, NIK: String(e) },
               });
-              if (record) {
-                const txt = `Edit No Rekening (${record.accountNumber} to ${e})`;
-                setActivity((prev) => {
-                  prev = prev
-                    ? prev.filter((p) => !p.includes("Edit No Rekening"))
-                    : [];
-                  prev.push(txt);
-                  return prev;
-                });
-              }
+              const txt = `${record ? "Edit" : "Tambah"} NIK (${
+                record ? record.Pemohon.NIK : ""
+              } ${record ? "to" : ""} ${e})`;
+              setActivity((prev) => {
+                prev = prev
+                  ? prev.filter(
+                      (p) => !p.includes(`${record ? "Edit" : "Tambah"} NIK`)
+                    )
+                  : [];
+                prev.push(txt);
+                return prev;
+              });
             }}
             align="col"
             width={"48%"}
+            disable={record ? true : disableEdit}
+          />
+          <FormInput
+            label="Nomor CIF"
+            value={data.Pemohon.accountNumber}
+            type="number"
+            onChange={(e: string) => {
+              setData({
+                ...data,
+                Pemohon: {
+                  ...data.Pemohon,
+                  accountNumber: String(e),
+                },
+              });
+              const txt = `${record ? "Edit" : "Tambah"} No Rekening (${
+                record ? record.Pemohon.accountNumber : ""
+              } ${record ? "to" : ""} ${e})`;
+              setActivity((prev) => {
+                prev = prev
+                  ? prev.filter(
+                      (p) =>
+                        !p.includes(`${record ? "Edit" : "Tambah"} No Rekening`)
+                    )
+                  : [];
+                prev.push(txt);
+                return prev;
+              });
+            }}
+            align="col"
+            width={"48%"}
+            disable={record ? true : disableEdit}
             // hide={user && user.role.roleName === "MARKETING" ? true : false}
           />
           <div style={{ width: "48%" }}>
@@ -215,27 +306,68 @@ export default function CreatePermohonanKredit({
             </div>
             <Select
               options={jeniss.map((j) => ({ label: j.name, value: j.id }))}
-              value={data.jenisPemohonId || undefined}
+              value={data.Pemohon.jenisPemohonId || undefined}
               style={{ width: "100%" }}
               onChange={(e) => {
                 setData({
                   ...data,
-                  jenisPemohonId: e,
-                  JenisPemohon: jeniss.filter((j) => j.id === e)[0],
+                  Pemohon: {
+                    ...data.Pemohon,
+                    jenisPemohonId: e,
+                    JenisPemohon: jeniss.filter((j) => j.id === e)[0],
+                  },
                 });
-                if (record) {
-                  const txt = `Edit Jenis Pemohon (${record.jenisPemohonId} to ${e})`;
-                  setActivity((prev) => {
-                    prev = prev
-                      ? prev.filter((p) => !p.includes("Edit Jenis Pemohon"))
-                      : [];
-                    prev.push(txt);
-                    return prev;
-                  });
-                }
+                const txt = `${record ? "Edit" : "Tambah"} Jenis Pemohon (${
+                  record ? record.Pemohon.jenisPemohonId : ""
+                } ${record ? "to" : ""} ${e})`;
+                setActivity((prev) => {
+                  prev = prev
+                    ? prev.filter(
+                        (p) =>
+                          !p.includes(
+                            `${record ? "Edit" : "Tambah"} Jenis Pemohon`
+                          )
+                      )
+                    : [];
+                  prev.push(txt);
+                  return prev;
+                });
               }}
+              disabled={record ? true : disableEdit}
             />
           </div>
+          <FormInput
+            label="Produk"
+            value={data.produkId || undefined}
+            type="option"
+            onChange={(e: number) => {
+              const find = produks.filter((u) => u.id === e);
+              if (find.length === 0) return alert("Data Marketing tidak valid");
+              setData({
+                ...data,
+                produkId: e,
+                Produk: find[0],
+              });
+              const txt = `${record ? "Edit" : "Tambah"} Produk (${
+                record ? record.produkId : ""
+              } ${record ? "to" : ""} ${e})`;
+              setActivity((prev) => {
+                prev = prev
+                  ? prev.filter(
+                      (p) => !p.includes(`${record ? "Edit" : "Tambah"} Produk`)
+                    )
+                  : [];
+                prev.push(txt);
+                return prev;
+              });
+            }}
+            align="col"
+            width={"48%"}
+            options={produks.map((p) => ({
+              label: `${p.name} (${p.code})`,
+              value: p.id,
+            }))}
+          />
           <div style={{ width: "48%" }}>
             <div className="p-1">
               <span className="text-red-500 w-3">*</span> Marketing
@@ -243,7 +375,7 @@ export default function CreatePermohonanKredit({
             <Select
               options={userss.map((u) => ({ label: u.fullname, value: u.id }))}
               style={{ width: "100%" }}
-              value={data.userId}
+              value={data.userId || undefined}
               disabled={
                 user &&
                 ["MARKETING", "ACCOUNT OFFICER"].includes(user.role.roleName)
@@ -258,16 +390,19 @@ export default function CreatePermohonanKredit({
                   userId: e,
                   User: find[0],
                 });
-                if (record) {
-                  const txt = `Edit Marketing (${record.userId} to ${e})`;
-                  setActivity((prev) => {
-                    prev = prev
-                      ? prev.filter((p) => !p.includes("Edit Marketing"))
-                      : [];
-                    prev.push(txt);
-                    return prev;
-                  });
-                }
+                const txt = `${record ? "Edit" : "Tambah"} Marketing (${
+                  record ? record.userId : ""
+                } ${record ? "to" : ""} ${e})`;
+                setActivity((prev) => {
+                  prev = prev
+                    ? prev.filter(
+                        (p) =>
+                          !p.includes(`${record ? "Edit" : "Tambah"} Marketing`)
+                      )
+                    : [];
+                  prev.push(txt);
+                  return prev;
+                });
               }}
             />
           </div>
@@ -288,18 +423,21 @@ export default function CreatePermohonanKredit({
                   ...data,
                   purposeUse: e,
                 });
-                if (record) {
-                  const txt = `Edit Tujuan Penggunaan (${record.purposeUse} to ${e})`;
-                  setActivity((prev) => {
-                    prev = prev
-                      ? prev.filter(
-                          (p) => !p.includes("Edit Tujuan Penggunaan")
-                        )
-                      : [];
-                    prev.push(txt);
-                    return prev;
-                  });
-                }
+                const txt = `${record ? "Edit" : "Tambah"} Tujuan Penggunaan (${
+                  record ? record.purposeUse : ""
+                } ${record ? "to" : ""} ${e})`;
+                setActivity((prev) => {
+                  prev = prev
+                    ? prev.filter(
+                        (p) =>
+                          !p.includes(
+                            `${record ? "Edit" : "Tambah"} Tujuan Penggunaan`
+                          )
+                      )
+                    : [];
+                  prev.push(txt);
+                  return prev;
+                });
               }}
             />
           </div>
@@ -322,19 +460,16 @@ export default function CreatePermohonanKredit({
                       ...data,
                       description: JSON.stringify(prevDesc), // simpan kembali ke string
                     });
-                    if (record) {
-                      const txt = `Edit Keterangan [index(${i})]`;
-                      setActivity((prev) => {
-                        prev = prev
-                          ? prev.filter(
-                              (p) =>
-                                !p.includes(`Edit Keterangan [index(${i})]`)
-                            )
-                          : [];
-                        prev.push(txt);
-                        return prev;
-                      });
-                    }
+                    const txt = `Edit Keterangan [index(${i})]`;
+                    setActivity((prev) => {
+                      prev = prev
+                        ? prev.filter(
+                            (p) => !p.includes(`Edit Keterangan [index(${i})]`)
+                          )
+                        : [];
+                      prev.push(txt);
+                      return prev;
+                    });
                   }}
                   align="col"
                   width={"48%"}
@@ -348,16 +483,14 @@ export default function CreatePermohonanKredit({
             value={tempDesc}
             onChange={(e: string) => {
               setTempDesc(e);
-              if (record) {
-                const txt = `Tambah Keterangan (${e})`;
-                setActivity((prev) => {
-                  prev = prev
-                    ? prev.filter((p) => !p.includes("Tambah Keterangan"))
-                    : [];
-                  prev.push(txt);
-                  return prev;
-                });
-              }
+              const txt = `Tambah Keterangan (${e})`;
+              setActivity((prev) => {
+                prev = prev
+                  ? prev.filter((p) => !p.includes("Tambah Keterangan"))
+                  : [];
+                prev.push(txt);
+                return prev;
+              });
             }}
             align="col"
             width={"48%"}
@@ -392,9 +525,7 @@ export default function CreatePermohonanKredit({
               loading={loading}
               onClick={() =>
                 window &&
-                window.location.replace(
-                  record ? "/document" : "/permohonan-kredit"
-                )
+                window.location.replace("/permohonan-" + type.toLowerCase())
               }
               danger
             >
@@ -403,6 +534,12 @@ export default function CreatePermohonanKredit({
             <Button
               type="primary"
               loading={loading}
+              disabled={
+                !data.Pemohon.accountNumber ||
+                !data.Pemohon.jenisPemohonId ||
+                !data.produkId ||
+                !data.userId
+              }
               onClick={() => handleSubmit()}
             >
               Submit
@@ -414,29 +551,38 @@ export default function CreatePermohonanKredit({
   );
 }
 
-const defaultPermohonan: IPermohonanKredit = {
-  id: 0,
-  fullname: "",
-  NIK: "",
-  purposeUse: "",
-
-  status: true,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  jenisPemohonId: 0,
-  accountNumber: "",
-  description: "",
-  activity: "",
-  userId: 0,
-  JenisPemohon: {
+const defaultPermohonan: IPermohonan = {
+  Pemohon: {
     id: 0,
-    name: "",
-    keterangan: "",
-
+    fullname: "",
+    NIK: "",
+    jenisPemohonId: 0,
+    accountNumber: "",
     status: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    JenisPemohon: {
+      id: 0,
+      name: "",
+      keterangan: "",
+
+      status: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   },
+  id: 0,
+  pemohonId: 0,
+  produkId: 0,
+  purposeUse: "",
+  status: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+
+  description: "",
+  activity: "",
+  userId: 0,
+
   User: {
     id: 0,
     fullname: "",
@@ -451,4 +597,13 @@ const defaultPermohonan: IPermohonanKredit = {
     roleId: 0,
   },
   RootFiles: [],
+  Produk: {
+    id: 0,
+    code: "",
+    name: "",
+    status: true,
+    produkType: EProdukType.KREDIT,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 };

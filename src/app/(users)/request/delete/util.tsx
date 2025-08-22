@@ -29,7 +29,7 @@ export default function TableDeletes() {
   const [data, setData] = useState<IPermohonanAction[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const { access, hasAccess } = useAccess("/request/delete");
+  const { hasAccess } = useAccess("/request/delete");
 
   const getData = async () => {
     setLoading(true);
@@ -132,9 +132,24 @@ export default function TableDeletes() {
       },
     },
     {
-      title: "DATA KREDIT",
-      dataIndex: ["PermohonanKredit", "fullname"],
+      title: "DATA PERMOHONAN",
+      dataIndex: ["Permohonan", "Pemohon", "fullname"],
       key: "fullname",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
+      title: "NAMA PRODUK",
+      dataIndex: ["Permohonan", "Produk", "name"],
+      key: "produkName",
       className: "text-xs",
       width: 200,
       onHeaderCell: () => {
@@ -392,7 +407,7 @@ const ProsesDeleteFile = ({
               description: `${
                 user?.fullname
               } Berhasil melakukan proses hapus file pada data permohonan ${
-                data.PermohonanKredit.fullname
+                data.Permohonan.Pemohon.fullname
               } dengan status ${data.statusAction}. ${
                 data.statusAction === StatusAction.APPROVED &&
                 "sekarang data data tersebut telah dihapus dari database. <br/> Berikut detail dari data data yang telah dihapus :"
@@ -472,7 +487,7 @@ const ProsesDeleteFile = ({
               />
               <FormInput
                 label="DATA KREDIT"
-                value={data.PermohonanKredit.fullname}
+                value={data.Permohonan.Pemohon.fullname}
                 disable
               />
               {data.RootFiles.map((rf) => (

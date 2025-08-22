@@ -1,12 +1,12 @@
 import { Metadata } from "next";
-import { CreatePermohonanKredit } from "..";
+import { CreatePermohonan } from "..";
 
 export const metadata: Metadata = { title: "Tambah Permohonan Kredit" };
 
 export default function Page() {
   return (
     <div>
-      <CreatePermohonanKredit />
+      <CreatePermohonan type="KREDIT" />
     </div>
   );
 }

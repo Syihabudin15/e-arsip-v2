@@ -14,11 +14,16 @@ export async function GET() {
     logsPerDay,
     pengajuanPerBulan,
     topUsers,
+    totalPemohon,
+    totalKredit,
+    totalTabungan,
+    totalDeposito,
+    totalProduk,
   ] = await Promise.all([
     prisma.user.count({ where: { status: true } }),
     prisma.role.count({ where: { status: true } }),
     prisma.files.count(),
-    prisma.permohonanKredit.count({
+    prisma.permohonan.count({
       where: { status: true, createdAt: { gte: today } },
     }),
     prisma.logs.groupBy({
@@ -33,7 +38,7 @@ export async function GET() {
         createdAt: "desc",
       },
     }),
-    prisma.permohonanKredit.groupBy({
+    prisma.permohonan.groupBy({
       by: ["createdAt"],
       _count: true,
       where: {
@@ -49,6 +54,17 @@ export async function GET() {
       orderBy: { _count: { userId: "desc" } },
       take: 5,
     }),
+    prisma.pemohon.count({ where: { status: true } }),
+    prisma.permohonan.count({
+      where: { Produk: { produkType: "KREDIT" }, status: true },
+    }),
+    prisma.permohonan.count({
+      where: { Produk: { produkType: "TABUNGAN" }, status: true },
+    }),
+    prisma.permohonan.count({
+      where: { Produk: { produkType: "DEPOSITO" }, status: true },
+    }),
+    prisma.produk.count({ where: { status: true } }),
   ]);
 
   const groupedLogs = [];
@@ -83,12 +99,15 @@ export async function GET() {
   }
 
   // Data tabel terbaru
-  const lastPermohonan = await prisma.permohonanKredit.findMany({
+  const lastPermohonan = await prisma.permohonan.findMany({
     where: { status: true },
     orderBy: { createdAt: "desc" },
     take: 5,
     include: {
-      JenisPemohon: true,
+      Pemohon: {
+        include: { JenisPemohon: true },
+      },
+      Produk: true,
       Files: true,
       User: true,
     },
@@ -101,7 +120,17 @@ export async function GET() {
   });
 
   return NextResponse.json({
-    cards: { totalUsers, totalRoles, totalDocuments, totalPermohonanHariIni },
+    cards: {
+      totalUsers,
+      totalRoles,
+      totalDocuments,
+      totalPermohonanHariIni,
+      totalPemohon,
+      totalKredit,
+      totalTabungan,
+      totalDeposito,
+      totalProduk,
+    },
     charts: {
       logsPerDay: groupedLogs,
       pengajuanPerBulan: groupedPengajuan,

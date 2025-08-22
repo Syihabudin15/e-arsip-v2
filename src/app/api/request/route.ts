@@ -1,8 +1,13 @@
 import cloudinary from "@/components/Cloudinary";
-import { IPermohonanAction, IRootFiles } from "@/components/IInterfaces";
+import {
+  EditActivity,
+  IPermohonanAction,
+  IRootFiles,
+} from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
 import { logActivity } from "@/components/utils/Auth";
 import { ENeedAction, Files, StatusAction } from "@prisma/client";
+import moment from "moment";
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
@@ -14,12 +19,29 @@ export const POST = async (req: NextRequest) => {
         Files: { connect: data.Files.map((d: Files) => ({ id: d.id })) },
       },
     });
+    const find = await prisma.permohonan.findFirst({
+      where: { id: data.permohonanId },
+    });
+    if (find) {
+      const temp = find.activity
+        ? (JSON.parse(find.activity) as EditActivity[])
+        : [];
+      temp.push({
+        time: moment().format("DD/MM/YYYY HH:mm"),
+        desc: `User id [${data.requesterId}] Memohon ${
+          data.action
+        } Files: ${data.Files.map((d: Files) => d.name).join(",")}`,
+      });
+      await prisma.permohonan.update({
+        where: { id: find.id },
+        data: { activity: JSON.stringify(temp) },
+      });
+    }
     await logActivity(
       req,
       `Permohonan ${data.action} File`,
       "POST",
       "permohonanAction",
-      JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
       `Berhasil mengajukan permohonan ${data.action} file ` +
         data.Files.map((d: any) => d.name).join(",")
@@ -35,7 +57,6 @@ export const POST = async (req: NextRequest) => {
       `Permohonan ${data.action} File Gagal`,
       "POST",
       "permohonanAction",
-      JSON.stringify(data),
       JSON.stringify({ status: 500, msg: "Server Error" }),
       `Gagal mengajukan permohonan ${data.action} file ` +
         data.Files.map((d: any) => d.name).join(",")
@@ -66,12 +87,14 @@ export const GET = async (req: NextRequest) => {
     const find = await prisma.permohonanAction.findMany({
       where: {
         ...(search && {
-          PermohonanKredit: {
-            OR: [
-              { fullname: { contains: search } },
-              { NIK: { contains: search } },
-              { accountNumber: { contains: search } },
-            ],
+          Permohonan: {
+            Pemohon: {
+              OR: [
+                { fullname: { contains: search } },
+                { NIK: { contains: search } },
+                { accountNumber: { contains: search } },
+              ],
+            },
           },
         }),
         ...(status && { statusAction: status }),
@@ -80,14 +103,23 @@ export const GET = async (req: NextRequest) => {
       include: {
         Files: {
           include: {
-            PermohonanKredit: true,
+            Permohonan: true,
             RootFiles: true,
             PermohonanAction: true,
           },
         },
         Requester: true,
         Approver: true,
-        PermohonanKredit: true,
+        Permohonan: {
+          include: {
+            Pemohon: {
+              include: {
+                JenisPemohon: true,
+              },
+            },
+            Produk: true,
+          },
+        },
       },
       take: pageSize,
       skip: skip,
@@ -96,12 +128,14 @@ export const GET = async (req: NextRequest) => {
     const total = await prisma.permohonanAction.count({
       where: {
         ...(search && {
-          PermohonanKredit: {
-            OR: [
-              { fullname: { contains: search } },
-              { NIK: { contains: search } },
-              { accountNumber: { contains: search } },
-            ],
+          Permohonan: {
+            Pemohon: {
+              OR: [
+                { fullname: { contains: search } },
+                { NIK: { contains: search } },
+                { accountNumber: { contains: search } },
+              ],
+            },
           },
         }),
         ...(status && { statusAction: status }),
@@ -119,6 +153,8 @@ export const GET = async (req: NextRequest) => {
             name: files.RootFiles.name,
             Files: [files],
             order: files.RootFiles.order,
+            produkType: files.RootFiles.produkType,
+            resourceType: files.RootFiles.resourceType,
           });
         } else {
           root = root.map((r) => ({ ...r, Files: [...r.Files, files] }));
@@ -140,14 +176,31 @@ export const GET = async (req: NextRequest) => {
 export const PUT = async (req: NextRequest) => {
   const data: IPermohonanAction = await req.json();
   try {
-    const {
-      id,
-      Approver,
-      Requester,
-      PermohonanKredit,
-      RootFiles,
-      ...savedData
-    } = data;
+    const { id, Approver, Requester, Permohonan, RootFiles, ...savedData } =
+      data;
+
+    // ADD ACTIVITY
+    const find = await prisma.permohonan.findFirst({
+      where: { id: data.permohonanId },
+    });
+    if (find) {
+      const temp = find.activity
+        ? (JSON.parse(find.activity) as EditActivity[])
+        : [];
+      temp.push({
+        time: moment().format("DD/MM/YYYY HH:mm"),
+        desc: `[${data.approverId}] Melakukan proses (${data.statusAction}) ${
+          data.action
+        } Files : ${RootFiles.flatMap((r) => r.Files)
+          .map((d: Files) => d.name)
+          .join(",")}`,
+      });
+      await prisma.permohonan.update({
+        where: { id: find.id },
+        data: { activity: JSON.stringify(temp) },
+      });
+    }
+
     const Files = RootFiles.flatMap((r) => r.Files);
     if (data.statusAction === StatusAction.APPROVED) {
       await prisma.permohonanAction.update({
@@ -175,7 +228,7 @@ export const PUT = async (req: NextRequest) => {
             prisma.files.update({
               where: { id: rf.id },
               data: {
-                permohonanKreditId: null,
+                permohonanId: null,
               },
             })
           ),
@@ -189,7 +242,6 @@ export const PUT = async (req: NextRequest) => {
         `Proses Permohonan ${data.action} File`,
         "PUT",
         "permohonanAction",
-        JSON.stringify(data),
         JSON.stringify({ status: 201, msg: "OK" }),
         `Berhasil proses pengajuan ${data.action} file ${data.RootFiles.flatMap(
           (d: any) => d.name
@@ -208,7 +260,6 @@ export const PUT = async (req: NextRequest) => {
       `Proses Permohonan ${data.action} File`,
       "PUT",
       "permohonanAction",
-      JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
       `Berhasil proses pengajuan ${data.action} file ${data.RootFiles.flatMap(
         (d: any) => d.name

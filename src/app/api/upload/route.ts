@@ -31,7 +31,6 @@ export const POST = async (req: NextRequest) => {
         "Gagal Upload",
         "POST",
         "document",
-        JSON.stringify({ fileName: folder, fileType, resourcetype, publicId }),
         JSON.stringify({ status: 400, msg: "Bad Request" }),
         "Gagal Upload file " + publicId
       );
@@ -45,7 +44,6 @@ export const POST = async (req: NextRequest) => {
       "Upload Berhasil",
       "POST",
       "document",
-      JSON.stringify({ fileName: folder, fileType, resourcetype, publicId }),
       JSON.stringify({ status: 201, msg: "OK" }),
       "Berhasil Upload file " + publicId
     );
@@ -82,7 +80,6 @@ export const DELETE = async (req: NextRequest) => {
       "Hapus File",
       "DELETE",
       "document",
-      JSON.stringify({ resourcetype, publicId }),
       JSON.stringify({ status: 200, msg: "OK" }),
       "Berhasil hapus file " + publicId
     );

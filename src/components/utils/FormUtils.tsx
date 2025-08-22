@@ -46,11 +46,16 @@ export const FormInput = (params: IFormInput) => {
             onChange={(e) => params.onChange && params.onChange(e)}
             disabled={params.disable}
             options={params.options}
+            maxCount={params.optionLength}
+            maxLength={params.optionLength}
             placeholder="Choose"
             style={{ width: "100%" }}
-            filterOption={(a, b) =>
-              b?.label.toLowerCase().includes(a.toLowerCase())
+            filterOption={
+              !params.onSearch
+                ? (a, b) => b?.label.toLowerCase().includes(a.toLowerCase())
+                : false
             }
+            onSearch={(e) => params.onSearch && params.onSearch(e)}
             showSearch
           />
         )}
@@ -229,7 +234,7 @@ const FormUploadInputFile = ({
     url: "",
     createdAt: new Date(),
     rootFilesId: data.id,
-    permohonanKreditId: null,
+    permohonanId: null,
   });
   const [tempFile, setTempFile] = useState<File | null>(null);
   const [filePass, setFilePass] = useState<string>();

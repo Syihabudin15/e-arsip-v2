@@ -1,6 +1,6 @@
 // import { PrismaClient } from "@prisma/client";
 import { IPermission } from "@/components/IInterfaces";
-import { PrismaClient } from "@prisma/client";
+import { EProdukType, PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
@@ -21,11 +21,11 @@ async function main() {
     },
     {
       path: "/permohonan-kredit",
-      access: ["read", "update", "write", "delete"],
+      access: ["read", "update", "write", "delete", "detail", "download"],
     },
     {
       path: "/document",
-      access: ["read", "update", "write", "delete"],
+      access: ["read", "update", "write", "delete", "detail", "download"],
     },
     {
       path: "/logs",
@@ -96,16 +96,143 @@ async function main() {
     },
   });
 
+  const produks = [
+    {
+      code: "Tabrima",
+      name: "Tabrima",
+      produkType: EProdukType.TABUNGAN,
+    },
+    {
+      code: "TabKu",
+      name: "TabunganKu",
+      produkType: EProdukType.TABUNGAN,
+    },
+    {
+      code: "TabEsc",
+      name: "Tabungan Escrow",
+      produkType: EProdukType.TABUNGAN,
+    },
+    {
+      code: "Dep1",
+      name: "Dep 1 Bulan",
+      produkType: EProdukType.DEPOSITO,
+    },
+    {
+      code: "Dep3",
+      name: "Dep 3 Bulan",
+      produkType: EProdukType.DEPOSITO,
+    },
+    {
+      code: "Dep6",
+      name: "Dep 6 Bulan",
+      produkType: EProdukType.DEPOSITO,
+    },
+    {
+      code: "Dep12",
+      name: "Dep 12 Bulan",
+      produkType: EProdukType.DEPOSITO,
+    },
+    {
+      code: "KREDIT",
+      name: "KREDIT",
+      produkType: EProdukType.KREDIT,
+    },
+  ];
+
+  await Promise.all(
+    produks.map((rf) =>
+      prisma.produk.upsert({
+        where: { code: rf.code },
+        update: {},
+        create: rf,
+      })
+    )
+  );
   const rootFilesSeed = [
-    { name: "File Identitas" },
-    { name: "File Kepatuhan" },
-    { name: "File MAUK" },
-    { name: "File Aspek Keuangan" },
-    { name: "File SLIK" },
-    { name: "File Jaminan" },
-    { name: "File Kredit" },
-    { name: "File Legal" },
-    { name: "File Custody" },
+    {
+      name: "File Identitas",
+      order: 1,
+      produkType: EProdukType.KREDIT,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "File Kredit",
+      order: 2,
+      produkType: EProdukType.KREDIT,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "File Jaminan",
+      order: 3,
+      produkType: EProdukType.KREDIT,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "File SLIK",
+      order: 4,
+      produkType: EProdukType.KREDIT,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "File Legal",
+      order: 5,
+      produkType: EProdukType.KREDIT,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "File Kepatuhan",
+      order: 6,
+      produkType: EProdukType.KREDIT,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "File Custody",
+      order: 7,
+      produkType: EProdukType.KREDIT,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "T Form Permohonan",
+      order: 8,
+      produkType: EProdukType.TABUNGAN,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "T Foto Nasabah",
+      order: 9,
+      produkType: EProdukType.TABUNGAN,
+      resourceType: "image/png,image/jpg,image/jpeg",
+    },
+    {
+      name: "T Speciment TTD",
+      order: 10,
+      produkType: EProdukType.TABUNGAN,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "D Form Permohonan",
+      order: 11,
+      produkType: EProdukType.DEPOSITO,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "D Foto Nasabah",
+      order: 12,
+      produkType: EProdukType.DEPOSITO,
+      resourceType: "image/png,image/jpg,image/jpeg",
+    },
+    {
+      name: "D Speciment TTD",
+      order: 13,
+      produkType: EProdukType.DEPOSITO,
+      resourceType: "application/pdf",
+    },
+    {
+      name: "Bilyet",
+      order: 14,
+      produkType: EProdukType.DEPOSITO,
+      resourceType: "application/pdf",
+    },
   ];
 
   await Promise.all(

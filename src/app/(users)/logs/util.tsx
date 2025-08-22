@@ -236,36 +236,6 @@ export default function TableLogs() {
       },
     },
     {
-      title: "SEND DATA",
-      dataIndex: "sendData",
-      key: "sendData",
-      className: "text-xs",
-      width: 200,
-      onHeaderCell: () => {
-        return {
-          ["style"]: {
-            textAlign: "center",
-            fontSize: 12,
-          },
-        };
-      },
-      render(value, record, index) {
-        return (
-          <>
-            <Paragraph
-              ellipsis={{
-                rows: 1,
-                expandable: "collapsible",
-              }}
-              style={{ fontSize: 12 }}
-            >
-              {record.sendData}
-            </Paragraph>
-          </>
-        );
-      },
-    },
-    {
       title: "RETURN STATUS",
       dataIndex: "returnStatus",
       key: "returnStatus",
@@ -394,7 +364,6 @@ export default function TableLogs() {
                   { header: "NAMA TABEL", key: "table", width: 30 },
                   { header: "IP ADDRESS", key: "ip", width: 30 },
                   { header: "USER AGENT", key: "agent", width: 30 },
-                  { header: "POST DATA", key: "postData", width: 50 },
                   { header: "RETURN STATUS", key: "return", width: 50 },
                   { header: "USER", key: "user", width: 30 },
                   { header: "CREATED_AT", key: "createdAt", width: 20 },
@@ -407,7 +376,6 @@ export default function TableLogs() {
                   table: d.table,
                   ip: d.serverIP,
                   agent: d.userAgent,
-                  postData: d.sendData,
                   return: d.returnStatus,
                   user: d.User && d.User.fullname,
                   createdAt: moment(d.createdAt).format("DD/MM/YYYY"),

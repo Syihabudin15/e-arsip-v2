@@ -90,7 +90,6 @@ export async function logActivity(
   name: string,
   method: string,
   table: string,
-  sendData: string,
   returnStatus: string,
   detail: string,
   userId?: number
@@ -108,7 +107,6 @@ export async function logActivity(
         path: req.nextUrl.pathname,
         serverIP: ip,
         userAgent: userAgent,
-        sendData,
         returnStatus,
         detail,
         userId: userId ? userId : session ? session.user.id : null,

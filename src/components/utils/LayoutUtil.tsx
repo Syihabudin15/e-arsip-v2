@@ -22,6 +22,7 @@ import {
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
+  ProductOutlined,
   RobotOutlined,
   TeamOutlined,
   UserOutlined,
@@ -140,9 +141,19 @@ export const menuItems = [
     key: "/jenis-pemohon",
   },
   {
-    label: "Permohonan Kredit",
+    label: "Kredit",
     icon: <FileTextFilled />,
     key: "/permohonan-kredit",
+  },
+  {
+    label: "Tabungan",
+    icon: <FileTextFilled />,
+    key: "/permohonan-tabungan",
+  },
+  {
+    label: "Deposito",
+    icon: <FileTextFilled />,
+    key: "/permohonan-deposito",
   },
   {
     label: "Dokumen",
@@ -158,6 +169,11 @@ export const menuItems = [
     label: "P. Download File",
     icon: <CloudDownloadOutlined />,
     key: "/request/downloads",
+  },
+  {
+    label: "Produk Management",
+    icon: <ProductOutlined />,
+    key: "/produk",
   },
   {
     label: "User Management",

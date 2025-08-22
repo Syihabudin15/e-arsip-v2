@@ -56,7 +56,6 @@ export const POST = async (req: NextRequest) => {
         "Gagal Tambah Role",
         "POST",
         "role",
-        JSON.stringify(data),
         JSON.stringify({ status: 400, msg: "Bad Request" }),
         "Gagal Menambahkan Role karena nama role sudah tersedia " +
           data.roleName
@@ -74,7 +73,6 @@ export const POST = async (req: NextRequest) => {
       "Tambah Role",
       "POST",
       "role",
-      JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
       "Berhasil Menambahkan Role " + data.roleName
     );
@@ -98,7 +96,6 @@ export const PUT = async (req: NextRequest) => {
         `Gagal ${data.status ? "Update" : "Hapus"} Role`,
         data.status ? "PUT" : "DELETE",
         "role",
-        JSON.stringify(data),
         JSON.stringify({ status: 404, msg: "Not Found" }),
         `Gagal ${
           data.status ? "Update" : "Hapus"
@@ -118,7 +115,6 @@ export const PUT = async (req: NextRequest) => {
       `${data.status ? "Update" : "Hapus"} Role`,
       data.status ? "PUT" : "DELETE",
       "role",
-      JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
       `Berhasil ${data.status ? "Update" : "Hapus"} Role ${find.roleName}`
     );

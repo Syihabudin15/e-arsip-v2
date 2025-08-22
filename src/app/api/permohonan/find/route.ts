@@ -1,4 +1,4 @@
-import { IFiles, IPermohonanKredit } from "@/components/IInterfaces";
+import { IFiles, IPermohonan } from "@/components/IInterfaces";
 import prisma from "@/components/Prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -10,10 +10,13 @@ export const GET = async (req: NextRequest) => {
       { status: 404 }
     );
   try {
-    const data = await prisma.permohonanKredit.findFirst({
+    const data = await prisma.permohonan.findFirst({
       where: { id: parseInt(id) },
       include: {
-        JenisPemohon: true,
+        Pemohon: {
+          include: { JenisPemohon: true, Permohonan: true },
+        },
+        Produk: true,
         User: true,
       },
     });
@@ -25,15 +28,18 @@ export const GET = async (req: NextRequest) => {
     }
 
     const findRootFile = await prisma.rootFiles.findMany({
+      where: {
+        produkType: data.Produk.produkType,
+      },
       orderBy: { order: "asc" },
     });
-    const newData: IPermohonanKredit = { ...data, RootFiles: [] };
+    const newData: IPermohonan = { ...data, RootFiles: [] };
 
     for (const root of findRootFile) {
       const files: IFiles[] = <any>await prisma.files.findMany({
         where: {
           rootFilesId: root.id,
-          permohonanKreditId: data.id,
+          permohonanId: data.id,
         },
         include: { PermohonanAction: true },
       });

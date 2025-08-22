@@ -65,7 +65,6 @@ export const POST = async (req: NextRequest) => {
           "Tambah Jenis Pemohon",
           "POST",
           "jenisPemohon",
-          JSON.stringify(data),
           JSON.stringify({ status: 200, msg: "OK" }),
           "Berhasil Menambahkan Jenis Pemohon"
         );
@@ -79,7 +78,6 @@ export const POST = async (req: NextRequest) => {
         "Tambah Jenis Pemohon",
         "POST",
         "jenisPemohon",
-        JSON.stringify(data),
         JSON.stringify({ status: 400, msg: "Bad Request" }),
         "Gagal Menambahkan Jenis Pemohon"
       );
@@ -94,7 +92,6 @@ export const POST = async (req: NextRequest) => {
       "Tambah Jenis Pemohon",
       "POST",
       "jenisPemohon",
-      JSON.stringify(data),
       JSON.stringify({ status: 200, msg: "OK" }),
       "Berhasil Menambahkan Jenis Pemohon " + data.name
     );
@@ -123,7 +120,6 @@ export const PUT = async (req: NextRequest) => {
       `${data.status ? "Update" : "Hapus"} Jenis Pemohon`,
       data.status ? "PUT" : "DELETE",
       "jenisPemohon",
-      JSON.stringify(data),
       JSON.stringify({ status: 200, msg: "OK" }),
       `Berhasil ${data.status ? "Update" : "Hapus"} Jenis Pemohon ${find.name}`
     );

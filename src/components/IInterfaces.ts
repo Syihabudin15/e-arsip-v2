@@ -1,11 +1,13 @@
 import {
   JenisPemohon,
-  PermohonanKredit,
   Role,
   User,
   PermohonanAction,
   RootFiles,
   Files,
+  Permohonan,
+  Pemohon,
+  Produk,
 } from "@prisma/client";
 
 export interface IUser extends User {
@@ -30,6 +32,8 @@ export interface IFormInput {
   hide?: boolean;
   options?: { label: any; value: any }[];
   optionsMode?: "tags" | "multiple";
+  optionLength?: number;
+  onSearch?: Function;
 }
 export interface IFiles extends Files {
   PermohonanAction: PermohonanAction[];
@@ -39,13 +43,21 @@ export interface IRootFiles extends RootFiles {
   Files: IFiles[];
 }
 
-export interface IPermohonanKredit extends PermohonanKredit {
+export interface IPemohon extends Pemohon {
+  Permohonan: IPermohonan[];
   JenisPemohon: JenisPemohon;
+}
+export interface IPemohonForPermohonan extends Pemohon {
+  JenisPemohon: JenisPemohon;
+}
+export interface IPermohonan extends Permohonan {
   RootFiles: IRootFiles[];
+  Produk: Produk;
   User: User;
+  Pemohon: IPemohonForPermohonan;
 }
 interface FilesPA extends Files {
-  PermohonanKredit: PermohonanKredit;
+  Permohonan: Permohonan;
 }
 interface IRootFilesPA extends RootFiles {
   Files: FilesPA[];
@@ -54,7 +66,7 @@ export interface IPermohonanAction extends PermohonanAction {
   RootFiles: IRootFilesPA[];
   Requester: User;
   Approver: User | null;
-  PermohonanKredit: PermohonanKredit;
+  Permohonan: IPermohonan;
 }
 
 export interface IMenu {

@@ -78,7 +78,6 @@ export const POST = async (req: NextRequest) => {
         "Tambah User",
         "POST",
         "user",
-        JSON.stringify(data),
         JSON.stringify({ status: 400, msg: "Bad Request" }),
         "Gagal menambahkan user karena username sudah digunakan"
       );
@@ -94,7 +93,6 @@ export const POST = async (req: NextRequest) => {
       "Tambah User",
       "POST",
       "user",
-      JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
       "Berhasil menambahkan user " + data.fullname
     );
@@ -116,7 +114,6 @@ export const PUT = async (req: NextRequest) => {
         "Gagal Update User",
         "PUT",
         "user",
-        JSON.stringify(data),
         JSON.stringify({ status: 404, msg: "Bad Request" }),
         "Gagal Update user karena user tidak ditemukan"
       );
@@ -138,7 +135,6 @@ export const PUT = async (req: NextRequest) => {
       `${data.status ? "Update" : "Hapus"} User`,
       data.status ? "PUT" : "DELETE",
       "user",
-      JSON.stringify(data),
       JSON.stringify({ status: 201, msg: "OK" }),
       `Berhasil ${data.status ? "Update" : "Hapus"} user ${find.fullname}`
     );

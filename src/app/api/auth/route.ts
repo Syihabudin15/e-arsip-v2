@@ -16,7 +16,6 @@ export const POST = async (req: NextRequest) => {
       "Gagal Login",
       "POST",
       "user",
-      JSON.stringify({ username, password }),
       JSON.stringify({ status: 400, msg: "Bad Request" }),
       "Percobaan masuk gagal karena username/password tidak diinputkan"
     );
@@ -38,7 +37,6 @@ export const POST = async (req: NextRequest) => {
         "Gagal Login",
         "POST",
         "user",
-        JSON.stringify({ username, password }),
         JSON.stringify({ status: 401, msg: "Unauthorize" }),
         "Percobaan masuk gagal karena username tidak ditemukan"
       );
@@ -54,7 +52,6 @@ export const POST = async (req: NextRequest) => {
         "Gagal Login",
         "POST",
         "user",
-        JSON.stringify({ username, password }),
         JSON.stringify({ status: 401, msg: "Unauthorize" }),
         "Percobaan masuk gagal karena passwowrd salah"
       );
@@ -68,7 +65,6 @@ export const POST = async (req: NextRequest) => {
       "Berhasil Login",
       "POST",
       "user",
-      JSON.stringify({ username, password }),
       JSON.stringify({ status: 200, msg: "OK" }),
       "Berhasil Login",
       find.id
@@ -139,7 +135,6 @@ export const DELETE = async (req: NextRequest) => {
       req,
       "Logout",
       "DELETE",
-      "-",
       "-",
       JSON.stringify({ status: 200, msg: "OK" }),
       "Berhasil Logout, Hapus Session",

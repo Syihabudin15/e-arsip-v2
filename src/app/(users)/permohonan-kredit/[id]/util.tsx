@@ -2,13 +2,13 @@
 
 import { Spin } from "antd";
 import { useEffect, useState } from "react";
-import { CreatePermohonanKredit } from "..";
-import { IPermohonanKredit } from "@/components/IInterfaces";
 import { LoadingOutlined } from "@ant-design/icons";
+import { IPermohonan } from "@/components/IInterfaces";
+import { CreatePermohonan } from "..";
 
 export default function UpdatePermohonanKredit({ id }: { id: number }) {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<IPermohonanKredit>();
+  const [data, setData] = useState<IPermohonan>();
 
   useEffect(() => {
     setLoading(true);
@@ -27,7 +27,7 @@ export default function UpdatePermohonanKredit({ id }: { id: number }) {
   return (
     <Spin spinning={loading}>
       {data ? (
-        <CreatePermohonanKredit record={data} />
+        <CreatePermohonan record={data} type={data.Produk.produkType} />
       ) : (
         <div>
           Memuat ... <LoadingOutlined />

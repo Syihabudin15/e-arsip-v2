@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { DeleteFiles } from ".";
+import { DeleteFiles } from "../..";
 
 export const metadata: Metadata = { title: "Hapus Berkas" };
 

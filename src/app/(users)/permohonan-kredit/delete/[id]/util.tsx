@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  IFiles,
-  IPermohonanKredit,
-  IRootFiles,
-} from "@/components/IInterfaces";
+import { IFiles, IPermohonan, IRootFiles } from "@/components/IInterfaces";
 import { FileOutlined, LoadingOutlined } from "@ant-design/icons";
 import { App, Button, Checkbox, Modal, Spin } from "antd";
 import { FormInput } from "@/components/utils/FormUtils";
@@ -19,7 +15,7 @@ const MyPDFViewer = dynamic(() =>
 
 export default function DeleteFiles({ id }: { id: number }) {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<IPermohonanKredit>();
+  const [data, setData] = useState<IPermohonan>();
   const [open, setOpen] = useState(false);
   const [desc, setDesc] = useState<string>();
   const [tempData, setTempData] = useState<IRootFiles[]>([]);
@@ -56,7 +52,7 @@ export default function DeleteFiles({ id }: { id: number }) {
       status: true,
       Files: files,
       requesterId: user?.id || 0,
-      permohonanKreditId: Number(id),
+      permohonanId: Number(id),
     };
 
     await fetch("/api/request", {
@@ -76,8 +72,8 @@ export default function DeleteFiles({ id }: { id: number }) {
               subject: `Permohonan Hapus File Baru`,
               description: `${
                 user?.fullname
-              } berhasil mengajukan permohonan hapus file baru untuk data kredit ${
-                data?.fullname
+              } berhasil mengajukan permohonan hapus file baru  ${
+                data?.Pemohon.fullname
               } <br/><br/>${tempData
                 .filter((t) => t.Files.length !== 0)
                 .map(
@@ -88,7 +84,6 @@ export default function DeleteFiles({ id }: { id: number }) {
                 )}`,
             }),
           });
-          window && window.location.replace("/request/delete");
         } else {
           modal.error({ title: "ERROR", content: "Internal Server Error" });
         }
@@ -112,7 +107,8 @@ export default function DeleteFiles({ id }: { id: number }) {
       <div className="p-2">
         <div className="text-lg py-4 font-bold border-b border-blue-500">
           <p>
-            BERKAS BERKAS {data && data.fullname} ({data && data.NIK})
+            BERKAS BERKAS {data && data.Pemohon.fullname.toUpperCase()} (
+            {data && data.Pemohon.NIK})
           </p>
         </div>
         <div className="flex flex-wrap gap-4 justify-between">

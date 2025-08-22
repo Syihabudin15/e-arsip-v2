@@ -21,7 +21,7 @@ export default function TableRole() {
   const [data, setData] = useState<Role[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const { access, hasAccess } = useAccess("/roles");
+  const { hasAccess } = useAccess("/roles");
   const user = useUser();
 
   const getData = async () => {

@@ -88,7 +88,7 @@ export default function UpsertRole({ record }: { record?: Role }) {
 
   const columns: TableProps<IMenu>["columns"] = [
     {
-      title: "Menu",
+      title: "MENU",
       dataIndex: "menu",
       key: "menu",
       width: 150,
@@ -106,7 +106,7 @@ export default function UpsertRole({ record }: { record?: Role }) {
       },
     },
     {
-      title: "Pathname",
+      title: "PATHNAME",
       dataIndex: "pathname",
       key: "pathname",
       width: 150,
@@ -124,10 +124,10 @@ export default function UpsertRole({ record }: { record?: Role }) {
       },
     },
     {
-      title: "Access",
+      title: "ACCESS",
       dataIndex: "access",
       key: "access",
-      width: 200,
+      width: 400,
       className: "text-xs",
       onHeaderCell: () => {
         return {
@@ -169,7 +169,7 @@ export default function UpsertRole({ record }: { record?: Role }) {
   ];
   return (
     <Spin spinning={loading}>
-      <div className="p-2">
+      <div className="p-2 h-[90vh] overflow-y-auto">
         <h1 className="font-bold py-2 mb-8  text-lg border-b">
           {record ? "UPDATE" : "CREATE NEW"} ROLE
         </h1>
