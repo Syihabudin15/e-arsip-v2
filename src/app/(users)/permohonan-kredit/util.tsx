@@ -34,6 +34,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useUser } from "@/components/contexts/UserContext";
 import { usePathname } from "next/navigation";
+import { HandleFileViewer } from "@/components/utils/LayoutUtil";
 const MyPDFViewer = dynamic(
   () => import("@/components/utils/LayoutUtil").then((d) => d.MyPDFViewer),
   {
@@ -705,7 +706,11 @@ const BerkasBerkas = ({
 
   useEffect(() => {
     (async () => {
-      const result = await mergePDF(files.Files.map((f) => f.url));
+      const result = await mergePDF(
+        files.Files.filter(
+          (f) => f.RootFiles.resourceType === "application/pdf"
+        ).map((f) => f.url)
+      );
       if (!result) return;
       setAllFile(result);
     })();
@@ -719,43 +724,54 @@ const BerkasBerkas = ({
           ...(window && window.innerWidth > 600 && { width: 80 }),
         }}
         items={[
-          {
-            label: `Semua`,
-            key: "allFile",
-            children: (
-              <>
-                {allFile && (
-                  <div className="h-[70vh]">
-                    <MyPDFViewer
-                      fileUrl={allFile}
-                      download={hasAccess("download")}
-                    />
-                  </div>
-                )}
-              </>
-            ),
-          },
+          ...(files.resourceType === "application/pdf"
+            ? [
+                {
+                  label: `Semua`,
+                  key: "allFile",
+                  children: (
+                    <>
+                      {allFile && (
+                        <div className="h-[70vh]">
+                          <MyPDFViewer
+                            fileUrl={allFile}
+                            download={hasAccess("download")}
+                          />
+                        </div>
+                      )}
+                    </>
+                  ),
+                },
+              ]
+            : []),
           ...(files &&
             files.Files.map((f) => ({
               label: f.name,
-              key: f.name + Date.now(),
+              key: f.url,
               children: (
-                <div className="h-[70vh]">
-                  <MyPDFViewer
-                    fileUrl={f.url}
-                    download={(() => {
-                      const filter = f.allowDownload
-                        .split(",")
-                        .map(Number)
-                        .includes(user?.id || 0);
-                      if (hasAccess("download") || filter) {
-                        return true;
-                      }
-                      if (!f.allowDownload) return false;
-                      return false;
-                    })()}
-                  />
-                </div>
+                <HandleFileViewer
+                  files={f.url}
+                  resourceType={f.RootFiles.resourceType}
+                  hasAccess={hasAccess}
+                  user={user}
+                  allowDownload={f.allowDownload}
+                />
+                // <div className="h-[70vh]">
+                //   <MyPDFViewer
+                //     fileUrl={f.url}
+                //     download={(() => {
+                //       const filter = f.allowDownload
+                //         .split(",")
+                //         .map(Number)
+                //         .includes(user?.id || 0);
+                //       if (hasAccess("download") || filter) {
+                //         return true;
+                //       }
+                //       if (!f.allowDownload) return false;
+                //       return false;
+                //     })()}
+                //   />
+                // </div>
               ),
             }))),
         ]}

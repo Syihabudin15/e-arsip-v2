@@ -3,7 +3,7 @@
 import { useUser } from "@/components/contexts/UserContext";
 import { IDescription, IPermohonanAction } from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
-import { MyPDFViewer } from "@/components/utils/LayoutUtil";
+import { HandleFileViewer, MyPDFViewer } from "@/components/utils/LayoutUtil";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import { FormOutlined } from "@ant-design/icons";
 import { StatusAction } from "@prisma/client";
@@ -448,30 +448,19 @@ const ProsesDeleteFile = ({
             <Tabs
               size="small"
               type="card"
-              items={[
-                ...data.RootFiles.flatMap((f) => f.Files).map((f) => ({
-                  label: f.name,
-                  key: f.name + Date.now(),
-                  children: (
-                    <div className="h-[72vh]">
-                      <MyPDFViewer
-                        fileUrl={f.url}
-                        download={(() => {
-                          const filter = f.allowDownload
-                            .split(",")
-                            .map(Number)
-                            .includes(user?.id || 0);
-                          if (hasAccess("download") || filter) {
-                            return true;
-                          }
-                          if (!f.allowDownload) return false;
-                          return false;
-                        })()}
-                      />
-                    </div>
-                  ),
-                })),
-              ]}
+              items={data.RootFiles.flatMap((rf) => rf.Files).map((f) => ({
+                label: f.name,
+                key: `${f.id}`, // lebih aman daripada Date.now()
+                children: (
+                  <HandleFileViewer
+                    files={f.url}
+                    resourceType={f.RootFiles?.resourceType || ""} // ✅ ambil dari parent
+                    allowDownload={f.allowDownload}
+                    hasAccess={hasAccess}
+                    user={user || undefined}
+                  />
+                ),
+              }))}
               tabPosition={"top"}
             />
           </div>

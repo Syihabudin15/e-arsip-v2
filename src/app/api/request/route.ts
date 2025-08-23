@@ -144,21 +144,17 @@ export const GET = async (req: NextRequest) => {
     });
 
     const newData: IPermohonanAction[] = <any>find.map((f) => {
-      let root: IRootFiles[] = [];
+      const root: IRootFiles[] = [];
       for (const files of f.Files) {
-        const find = root.filter((rf) => rf.id === files.rootFilesId);
-        if (find.length === 0) {
-          root.push({
-            id: files.RootFiles.id,
-            name: files.RootFiles.name,
-            Files: [files],
-            order: files.RootFiles.order,
-            produkType: files.RootFiles.produkType,
-            resourceType: files.RootFiles.resourceType,
-          });
-        } else {
-          root = root.map((r) => ({ ...r, Files: [...r.Files, files] }));
-        }
+        root.push({
+          id: files.RootFiles.id,
+          name: files.RootFiles.name,
+          Files: [files],
+          order: files.RootFiles.order,
+          produkType: files.RootFiles.produkType,
+          resourceType: files.RootFiles.resourceType,
+          status: files.RootFiles.status,
+        });
       }
       return { ...f, RootFiles: root };
     });

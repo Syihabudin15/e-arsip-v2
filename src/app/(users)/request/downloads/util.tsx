@@ -9,7 +9,7 @@ import {
   IUser,
 } from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
-import { MyPDFViewer } from "@/components/utils/LayoutUtil";
+import { HandleFileViewer, MyPDFViewer } from "@/components/utils/LayoutUtil";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   FolderOutlined,
@@ -52,7 +52,6 @@ export default function TableDownload() {
     )
       .then((res) => res.json())
       .then((res) => {
-        console.log(res);
         setData(res.data);
         setTotal(res.total);
       })
@@ -326,6 +325,7 @@ export default function TableDownload() {
                 getData={getData}
                 user={user || null}
                 hasAccess={hasAccess}
+                key={record.id}
               />
             )}
           </div>
@@ -382,7 +382,7 @@ export default function TableDownload() {
   );
 }
 
-const ProsesDownloadFile = ({
+export const ProsesDownloadFile = ({
   data,
   getData,
   user,
@@ -429,7 +429,7 @@ const ProsesDownloadFile = ({
             content: `User ${data.Requester.fullname} ${
               data.statusAction === StatusAction.APPROVED
                 ? "sekarang dapat mendownload berkas-berkas ini"
-                : "Belum dapat mendownload berkas-berkas ini kare status " +
+                : "Belum dapat mendownload berkas-berkas ini karena status " +
                   data.statusAction
             }`,
           });
@@ -460,7 +460,17 @@ const ProsesDownloadFile = ({
       });
     setLoading(false);
   };
+  const tabItems = data.RootFiles.flatMap((rf) =>
+    rf.Files.map((f) => ({
+      label: f.name,
+      key: `${rf.id}-${f.id}`,
+    }))
+  );
 
+  console.log(
+    "Generated keys:",
+    tabItems.map((i) => i.key)
+  );
   return (
     <div>
       <Button
@@ -490,30 +500,19 @@ const ProsesDownloadFile = ({
             <Tabs
               size="small"
               type="card"
-              items={[
-                ...data.RootFiles.flatMap((f) => f.Files).map((f) => ({
-                  label: f.name,
-                  key: f.name + Date.now(),
-                  children: (
-                    <div className="h-[72vh]">
-                      <MyPDFViewer
-                        fileUrl={f.url}
-                        download={(() => {
-                          const filter = f.allowDownload
-                            .split(",")
-                            .map(Number)
-                            .includes(user?.id || 0);
-                          if (hasAccess("download") || filter) {
-                            return true;
-                          }
-                          if (!f.allowDownload) return false;
-                          return false;
-                        })()}
-                      />
-                    </div>
-                  ),
-                })),
-              ]}
+              items={data.RootFiles.flatMap((rf) => rf.Files).map((f) => ({
+                label: f.name,
+                key: `${f.id}`,
+                children: (
+                  <HandleFileViewer
+                    files={f.url}
+                    resourceType={f.RootFiles?.resourceType || ""} // ✅ ambil dari parent
+                    allowDownload={f.allowDownload}
+                    hasAccess={hasAccess}
+                    user={user || undefined}
+                  />
+                ),
+              }))}
               tabPosition={"top"}
             />
           </div>
@@ -748,10 +747,17 @@ const CreateDownloadFile = ({
                 (f) => ({
                   label: `${f.name} (${f.RootFiles.name})`,
                   value: f.url,
-                  disabled: f.allowDownload
-                    .split(",")
-                    .map(Number)
-                    .includes(user ? user?.id : 0),
+                  disabled:
+                    f.allowDownload
+                      .split(",")
+                      .map(Number)
+                      .includes(user ? user?.id : 0) ||
+                    f.PermohonanAction.some(
+                      (f) =>
+                        f.requesterId === user?.id &&
+                        f.statusAction === StatusAction.PENDING &&
+                        f.action === "DOWNLOAD"
+                    ),
                 })
               )}
               optionsMode="multiple"

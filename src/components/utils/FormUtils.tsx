@@ -1,5 +1,14 @@
-import { App, Button, Input, Modal, Select, Upload, UploadProps } from "antd";
-import { IFormInput, IRootFiles } from "../IInterfaces";
+import {
+  App,
+  Button,
+  Image,
+  Input,
+  Modal,
+  Select,
+  Upload,
+  UploadProps,
+} from "antd";
+import { IFormInput, IRootFiles, IUser } from "../IInterfaces";
 import {
   CloudUploadOutlined,
   DeleteOutlined,
@@ -9,6 +18,7 @@ import { useEffect, useState } from "react";
 import { handleUnlock, isPdfProtected } from "./PDFUtils";
 import { usePathname } from "next/navigation";
 import { Files } from "@prisma/client";
+import { MyPDFViewer } from "./LayoutUtil";
 
 export const FormInput = (params: IFormInput) => {
   return (
@@ -291,10 +301,14 @@ const FormUploadInputFile = ({
   const props: UploadProps = {
     beforeUpload: async (file) => {
       setLoading(true);
-      const protectedPdf = await isPdfProtected(file);
-      if (protectedPdf.status) {
-        setTempFile(file);
-        setOpen(true);
+      if (data.resourceType === "application/pdf") {
+        const protectedPdf = await isPdfProtected(file);
+        if (protectedPdf.status) {
+          setTempFile(file);
+          setOpen(true);
+        } else {
+          await handleUpload(file);
+        }
       } else {
         await handleUpload(file);
       }
@@ -302,7 +316,7 @@ const FormUploadInputFile = ({
       return false; // prevent automatic upload
     },
     showUploadList: false, // sembunyikan default list
-    accept: "application/pdf",
+    accept: data.resourceType,
   };
 
   const handleUpload = async (file?: any) => {
@@ -429,11 +443,80 @@ const FormUploadInputFile = ({
   );
 };
 
-const getBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file); // convert to base64
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
+// const getBase64 = (file: File): Promise<string> => {
+//   return new Promise((resolve, reject) => {
+//     const reader = new FileReader();
+//     reader.readAsDataURL(file); // convert to base64
+//     reader.onload = () => resolve(reader.result as string);
+//     reader.onerror = (error) => reject(error);
+//   });
+// };
+
+export const HandleFileViewer = ({
+  files,
+  resourceType,
+  allowDownload,
+  hasAccess,
+  user,
+}: {
+  files: string;
+  resourceType: string;
+  allowDownload: string;
+  hasAccess: Function;
+  user?: IUser;
+}) => {
+  const handleDownload = () => {
+    const filter = allowDownload
+      .split(",")
+      .map(Number)
+      .includes(user?.id || 0);
+    if (hasAccess("download") || filter) {
+      return true;
+    }
+    if (!allowDownload) return false;
+    return false;
+  };
+
+  switch (resourceType) {
+    case "application/pdf": {
+      return (
+        <div className="h-[70vh]">
+          <MyPDFViewer fileUrl={files} download={handleDownload()} />
+        </div>
+      );
+    }
+    case "image/png,image/jpg,image/jpeg": {
+      return (
+        <div className=" h-[70vh]">
+          <Image
+            src={files}
+            alt={files}
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
+      );
+    }
+    case "video/mp4": {
+      return (
+        <div className="flex flex-col justify-center items-center h-[70vh]">
+          <video
+            src={files}
+            controls
+            controlsList={handleDownload() ? "" : "nodownload"}
+            disablePictureInPicture={!handleDownload()}
+            className="max-h-full max-w-full object-contain"
+          />
+          {handleDownload() && (
+            <a
+              href={files}
+              download={files}
+              className="text-blue-500 underline mt-2"
+            >
+              Download
+            </a>
+          )}
+        </div>
+      );
+    }
+  }
 };

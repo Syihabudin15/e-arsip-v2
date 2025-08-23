@@ -343,3 +343,10 @@ export const MyPDFViewer = dynamic(
     loading: () => <LoadingOutlined />,
   }
 );
+export const HandleFileViewer = dynamic(
+  () => import("@/components/utils/FormUtils").then((d) => d.HandleFileViewer),
+  {
+    ssr: false,
+    loading: () => <LoadingOutlined />,
+  }
+);

@@ -8,6 +8,7 @@ export const GET = async (req: NextRequest) => {
   );
   const data = await prisma.rootFiles.findMany({
     where: {
+      status: true,
       ...(produkType && { produkType: produkType }),
     },
     orderBy: { order: "asc" },

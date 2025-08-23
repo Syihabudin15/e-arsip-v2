@@ -130,7 +130,8 @@ model RootFiles {
   produkType   EProdukType
   resourceType String
 
-  Files Files[]
+  Files  Files[]
+  status Boolean @default(true)
 }
 
 model Files {

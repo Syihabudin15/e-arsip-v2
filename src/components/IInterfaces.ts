@@ -58,6 +58,7 @@ export interface IPermohonan extends Permohonan {
 }
 interface FilesPA extends Files {
   Permohonan: Permohonan;
+  RootFiles?: RootFiles;
 }
 interface IRootFilesPA extends RootFiles {
   Files: FilesPA[];
