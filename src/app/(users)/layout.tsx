@@ -1,6 +1,12 @@
 "use client";
 
-import { MenuWindows } from "@/components/utils/LayoutUtil";
+import { LoadingOutlined } from "@ant-design/icons";
+// import { MenuWindows } from "@/components/utils/LayoutUtil";
+import dynamic from "next/dynamic";
+const MenuWindows = dynamic(
+  () => import("@/components/utils/LayoutUtil").then((d) => d.MenuWindows),
+  { ssr: false, loading: () => <LoadingOutlined /> }
+);
 
 export default function Page({ children }: { children: React.ReactNode }) {
   return (

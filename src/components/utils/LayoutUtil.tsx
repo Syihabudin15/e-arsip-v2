@@ -15,6 +15,7 @@ import {
   DashboardFilled,
   DeleteColumnOutlined,
   FileTextFilled,
+  FileZipFilled,
   FolderFilled,
   KeyOutlined,
   LoadingOutlined,
@@ -176,6 +177,11 @@ export const menuItems = [
     key: "/produk",
   },
   {
+    label: "Files Management",
+    icon: <FileZipFilled />,
+    key: "/files",
+  },
+  {
     label: "User Management",
     icon: <UserOutlined />,
     key: "/users",
@@ -304,28 +310,32 @@ export const MenuWindows = () => {
         >
           {collapse ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         </Button>
-        <Menu
-          mode="inline"
-          items={(() => {
-            if (user) {
-              const userMenu = JSON.parse(
-                user.role.permission
-              ) as IPermission[];
-              const fix = menuItems.filter((menu) =>
-                userMenu.some((um) => um.path === menu.key)
-              );
-              return fix;
-            } else {
-              return [];
-            }
-          })()}
-          style={{
-            background: "linear-gradient(to bottom right, #3B82F6, #A855F7)",
-          }}
-          theme="dark"
-          inlineCollapsed={collapse}
-          onClick={(e) => window && window.location.replace(e.key)}
-        />
+        <div>
+          <Menu
+            mode="inline"
+            items={(() => {
+              if (user) {
+                const userMenu = JSON.parse(
+                  user.role.permission
+                ) as IPermission[];
+                const fix = menuItems.filter((menu) =>
+                  userMenu.some((um) => um.path === menu.key)
+                );
+                return fix;
+              } else {
+                return [];
+              }
+            })()}
+            style={{
+              background: "linear-gradient(to bottom right, #3B82F6, #A855F7)",
+              maxHeight: "87vh",
+              overflow: "auto",
+            }}
+            theme="dark"
+            inlineCollapsed={collapse}
+            onClick={(e) => window && window.location.replace(e.key)}
+          />
+        </div>
       </Layout>
     </div>
   );

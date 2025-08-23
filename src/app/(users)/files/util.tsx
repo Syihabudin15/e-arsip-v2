@@ -2,37 +2,39 @@
 
 import { useUser } from "@/components/contexts/UserContext";
 import { IUser } from "@/components/IInterfaces";
-import { FormInput } from "@/components/utils/FormUtils";
+import { FilterOption, FormInput } from "@/components/utils/FormUtils";
 import { useAccess } from "@/components/utils/PermissionUtil";
-import {
-  DeleteOutlined,
-  FormOutlined,
-  PlusCircleOutlined,
-} from "@ant-design/icons";
-import { EProdukType, Produk } from "@prisma/client";
-import { App, Button, Input, Modal, Select, Table, TableProps } from "antd";
+import { FormOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { EProdukType, Files, RootFiles } from "@prisma/client";
+import { App, Button, Input, Modal, Table, TableProps } from "antd";
 import { HookAPI } from "antd/es/modal/useModal";
-import moment from "moment";
 import { useEffect, useState } from "react";
 
-export default function TableProduk() {
+interface IRoot extends RootFiles {
+  Files: Files[];
+}
+
+export default function TableRootFiles() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState<string>();
-  const [data, setData] = useState<Produk[]>([]);
+  const [produkType, setProdukType] = useState<EProdukType>();
+  const [resourceType, setResourceType] = useState<string>();
+  const [data, setData] = useState<IRoot[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [produkType, setProdukType] = useState<EProdukType>();
-  const { hasAccess } = useAccess("/roles");
+  const { hasAccess } = useAccess("/files");
   const user = useUser();
   const { modal } = App.useApp();
 
   const getData = async () => {
     setLoading(true);
     await fetch(
-      `/api/produk?page=${page}&pageSize=${pageSize}${
+      `/api/rootfiles?page=${page}&pageSize=${pageSize}${
         search ? "&search=" + search : ""
-      }${produkType ? "&produkType=" + produkType : ""}`
+      }${produkType ? "&produkType=" + produkType : ""}${
+        resourceType ? "&resourceType=" + resourceType : ""
+      }`
     )
       .then((res) => res.json())
       .then((res) => {
@@ -54,9 +56,9 @@ export default function TableProduk() {
       await getData();
     }, 200);
     return () => clearTimeout(timeout);
-  }, [search, page, pageSize, produkType]);
+  }, [search, page, pageSize, produkType, resourceType]);
 
-  const columns: TableProps<Produk>["columns"] = [
+  const columns: TableProps<IRoot>["columns"] = [
     {
       title: "NO",
       dataIndex: "no",
@@ -76,22 +78,7 @@ export default function TableProduk() {
       },
     },
     {
-      title: "PRODUK CODE",
-      dataIndex: "code",
-      key: "code",
-      className: "text-xs",
-      width: 100,
-      onHeaderCell: () => {
-        return {
-          ["style"]: {
-            textAlign: "center",
-            fontSize: 12,
-          },
-        };
-      },
-    },
-    {
-      title: "PRODUK NAME",
+      title: "NAMA FILES",
       dataIndex: "name",
       key: "name",
       className: "text-xs",
@@ -106,11 +93,11 @@ export default function TableProduk() {
       },
     },
     {
-      title: "PRODUK TYPE",
+      title: "TIPE PRODUK",
       dataIndex: "produkType",
-      key: "type",
+      key: "produkType",
       className: "text-xs",
-      width: 100,
+      width: 150,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -121,11 +108,11 @@ export default function TableProduk() {
       },
     },
     {
-      title: "CREATED AT",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      className: "text-xs text-center",
-      width: 100,
+      title: "JENIS FILE",
+      dataIndex: "jenisFile",
+      key: "jenisFile",
+      className: "text-xs",
+      width: 150,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -135,15 +122,37 @@ export default function TableProduk() {
         };
       },
       render(value, record, index) {
-        return <>{moment(record.createdAt).format("DD/MM/YYYY")}</>;
+        return (
+          <>
+            {record.resourceType === "application/pdf" && "FILE (PDF)"}
+            {record.resourceType === "image/png,image/jpg,image/jpeg" &&
+              "IMAGE (PNG/JPG/JPEG)"}
+            {record.resourceType === "video/mp4" && "VIDEO (MP4)"}
+          </>
+        );
       },
     },
     {
-      title: "UPDATED AT",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
+      title: "URUTAN FILE",
+      dataIndex: "order",
+      key: "order",
       className: "text-xs text-center",
-      width: 100,
+      width: 150,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
+      title: "JUMLAH FILE",
+      dataIndex: "total",
+      key: "total",
+      className: "text-xs text-center",
+      width: 150,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -153,7 +162,7 @@ export default function TableProduk() {
         };
       },
       render(value, record, index) {
-        return <>{moment(record.updatedAt).format("DD/MM/YYYY")}</>;
+        return <>{record.Files.length}</>;
       },
     },
     {
@@ -174,15 +183,7 @@ export default function TableProduk() {
         return (
           <div className="flex gap-2 justify-center" key={record.id}>
             {hasAccess("update") && (
-              <UpserProduk
-                record={record}
-                user={user}
-                hook={modal}
-                getData={getData}
-              />
-            )}
-            {hasAccess("delete") && (
-              <DeleteProduk
+              <UpsertRootfile
                 record={record}
                 getData={getData}
                 user={user}
@@ -200,20 +201,24 @@ export default function TableProduk() {
       title={() => (
         <div>
           <div className="border-b border-blue-500 py-2">
-            <h1 className="font-bold text-xl">Produk Management</h1>
+            <h1 className="font-bold text-xl">Files Management</h1>
           </div>
           <div className="flex my-2 gap-2 justify-between">
             <div className="flex gap-2">
               {hasAccess("write") && (
-                <UpserProduk user={user} hook={modal} getData={getData} />
+                <UpsertRootfile getData={getData} user={user} hook={modal} />
               )}
-              <Select
-                options={optionProdukType}
-                size="small"
-                placeholder="Filter"
-                style={{ width: 150 }}
-                onChange={(e: EProdukType) => setProdukType(e)}
-                allowClear
+              <FilterOption
+                value={produkType}
+                onChange={(e: any) => setProdukType(e)}
+                items={OProdukType}
+                width={120}
+              />
+              <FilterOption
+                value={resourceType}
+                onChange={(e: any) => setResourceType(e)}
+                items={OResourceType}
+                width={120}
               />
             </div>
             <div className="w-42">
@@ -246,24 +251,24 @@ export default function TableProduk() {
   );
 }
 
-const UpserProduk = ({
+const UpsertRootfile = ({
   record,
+  getData,
   user,
   hook,
-  getData,
 }: {
-  record?: Produk;
+  record?: IRoot;
+  getData: Function;
   user?: IUser;
   hook: HookAPI;
-  getData: Function;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<Produk>(record || defaultProduk);
+  const [data, setData] = useState<IRoot>(record || defaultRootFile);
 
   const handleSubmit = async () => {
     setLoading(true);
-    await fetch("/api/produk", {
+    await fetch("/api/rootfiles", {
       method: record ? "PUT" : "POST",
       body: JSON.stringify(data),
     })
@@ -271,23 +276,23 @@ const UpserProduk = ({
       .then(async (res) => {
         if (res.status === 201) {
           hook.success({ title: "BERHASIL", content: res.msg });
+          setLoading(false);
           setOpen(false);
           await getData();
           await fetch("/api/sendEmail", {
             method: "POST",
             body: JSON.stringify({
-              subject: `${record ? "Update" : "Tambah"} data Produk ${
-                data.name
-              }`,
+              subject: `${record ? "Update" : "Penambahan"} Data Root File`,
               description: `${user?.fullname} Berhasil ${
-                record ? "Update" : "Tambah"
-              } data produk ${
-                data.name
-              }. <br/><br/> Data Baru : ${JSON.stringify(data)}`,
+                record ? "Update" : "menambahkan"
+              } Data Root File ${!record ? "Baru" : ""} ${
+                record ? record.name : data.name
+              }`,
             }),
           });
         } else {
           hook.error({ title: "ERROR", content: res.msg });
+          setLoading(false);
         }
       })
       .catch((err) => {
@@ -300,47 +305,53 @@ const UpserProduk = ({
   return (
     <div>
       <Button
-        icon={record ? <FormOutlined /> : <PlusCircleOutlined />}
-        onClick={() => setOpen(true)}
         size="small"
+        icon={record ? <FormOutlined /> : <PlusCircleOutlined />}
         type="primary"
+        onClick={() => setOpen(true)}
+        disabled={record && record.Files.length !== 0}
       >
         {!record && "New"}
       </Button>
       <Modal
         open={open}
-        onCancel={() => setOpen(false)}
-        title={`${record ? "UPDAET" : "CREATE NEW"} DATA PRODUK ${
-          record ? `${record.name.toUpperCase()} (${record.code})` : ""
+        title={`${record ? "UPDATE" : "CREATE NEW"} DATA ROOTFILES ${
+          record ? record.name.toUpperCase() : ""
         }`}
+        loading={loading}
+        onCancel={() => setOpen(false)}
         okButtonProps={{
-          disabled: !data.code || !data.name || !data.produkType,
-          loading: loading,
+          disabled:
+            !data.name || !data.produkType || !data.resourceType || !data.order,
         }}
         onOk={() => handleSubmit()}
-        loading={loading}
       >
         <div className="my-4 flex flex-col gap-1">
           <FormInput
-            label="KODE PRODUK"
-            value={data.code}
-            onChange={(e: any) => setData({ ...data, code: e })}
-          />
-          <FormInput
-            label="NAMA PRODUK"
+            label="Nama File"
             value={data.name}
             onChange={(e: any) => setData({ ...data, name: e })}
           />
           <FormInput
-            label="TIPE PRODUK"
-            type="option"
+            label="Tipe Produk"
             value={data.produkType}
             onChange={(e: any) => setData({ ...data, produkType: e })}
-            options={[
-              { label: EProdukType.KREDIT, value: EProdukType.KREDIT },
-              { label: EProdukType.TABUNGAN, value: EProdukType.TABUNGAN },
-              { label: EProdukType.DEPOSITO, value: EProdukType.DEPOSITO },
-            ]}
+            type="option"
+            options={OProdukType}
+          />
+          <FormInput
+            label="Jenis File"
+            value={data.resourceType}
+            onChange={(e: any) => setData({ ...data, resourceType: e })}
+            type="option"
+            options={OResourceType}
+            disable={record && record.Files.length !== 0}
+          />
+          <FormInput
+            label="Urutan Order"
+            value={data.order}
+            onChange={(e: any) => setData({ ...data, order: Number(e) })}
+            type="number"
           />
         </div>
       </Modal>
@@ -348,96 +359,22 @@ const UpserProduk = ({
   );
 };
 
-const DeleteProduk = ({
-  record,
-  user,
-  hook,
-  getData,
-}: {
-  record: Produk;
-  user?: IUser;
-  hook: HookAPI;
-  getData: Function;
-}) => {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    await fetch("/api/produk", {
-      method: "PUT",
-      body: JSON.stringify({ ...record, status: false }),
-    })
-      .then((res) => res.json())
-      .then(async (res) => {
-        if (res.status === 201) {
-          hook.success({ title: "BERHASIL", content: res.msg });
-          setOpen(false);
-          await getData();
-          await fetch("/api/sendEmail", {
-            method: "POST",
-            body: JSON.stringify({
-              subject: `Hapus data Produk ${record.name}`,
-              description: `${user?.fullname} Berhasil hapus data produk ${record.name} (${record.code}).`,
-            }),
-          });
-        } else {
-          hook.error({ title: "ERROR", content: res.msg });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        hook.error({ title: "ERROR", content: "Internal Server Error" });
-      });
-    setLoading(false);
-  };
-
-  return (
-    <div>
-      <Button
-        icon={<DeleteOutlined />}
-        danger
-        onClick={() => setOpen(true)}
-        size="small"
-        type="primary"
-      >
-        {!record && "New"}
-      </Button>
-      <Modal
-        open={open}
-        onCancel={() => setOpen(false)}
-        title={`HAPUS DATA PRODUK ${record.name}`}
-        okButtonProps={{
-          loading: loading,
-        }}
-        onOk={() => handleSubmit()}
-        loading={loading}
-      >
-        <div className="my-4">
-          <p>Apakah anda yakin untuk menghapus data Produk {record.name}?</p>
-        </div>
-        <div className="my-4 flex flex-col gap-1">
-          <FormInput label="KODE PRODUK" value={record.code} disable />
-          <FormInput label="NAMA PRODUK" value={record.name} disable />
-          <FormInput label="TIPE PRODUK" value={record.produkType} disable />
-        </div>
-      </Modal>
-    </div>
-  );
-};
-
-const defaultProduk: Produk = {
-  id: 0,
-  code: "",
-  name: "",
-  status: true,
-  produkType: EProdukType.TABUNGAN,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
-const optionProdukType = [
-  { label: EProdukType.DEPOSITO, value: EProdukType.DEPOSITO },
-  { label: EProdukType.TABUNGAN, value: EProdukType.TABUNGAN },
+const OProdukType = [
   { label: EProdukType.KREDIT, value: EProdukType.KREDIT },
+  { label: EProdukType.TABUNGAN, value: EProdukType.TABUNGAN },
+  { label: EProdukType.DEPOSITO, value: EProdukType.DEPOSITO },
 ];
+const OResourceType = [
+  { label: "FILE PDF", value: "application/pdf" },
+  { label: "IMAGE", value: "image/png,image/jpg,image/jpeg" },
+  { label: "VIDEO", value: "video/mp4" },
+];
+const defaultRootFile: IRoot = {
+  id: 0,
+  name: "",
+  resourceType: "application/pdf",
+  produkType: "KREDIT",
+  status: true,
+  order: 1,
+  Files: [],
+};

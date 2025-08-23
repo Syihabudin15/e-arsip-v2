@@ -237,7 +237,7 @@ export default function TableRole() {
       bordered
       loading={loading}
       dataSource={data}
-      scroll={{ x: "max-content", y: 370 }}
+      scroll={{ x: "max-content", y: 400 }}
       pagination={{
         size: "small",
         total: total,

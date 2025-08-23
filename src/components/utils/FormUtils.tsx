@@ -506,15 +506,6 @@ export const HandleFileViewer = ({
             disablePictureInPicture={!handleDownload()}
             className="max-h-full max-w-full object-contain"
           />
-          {handleDownload() && (
-            <a
-              href={files}
-              download={files}
-              className="text-blue-500 underline mt-2"
-            >
-              Download
-            </a>
-          )}
         </div>
       );
     }
