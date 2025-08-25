@@ -1,3 +1,5 @@
+"use client";
+
 import { useUser } from "@/components/contexts/UserContext";
 import {
   EditActivity,
@@ -8,7 +10,6 @@ import {
 import { FormInput, FormUpload } from "@/components/utils/FormUtils";
 import {
   EProdukType,
-  Files,
   JenisPemohon,
   Pemohon,
   Produk,
@@ -41,6 +42,23 @@ export default function CreatePermohonan({
   useEffect(() => {
     (async () => {
       setLoading(true);
+      if (!record) {
+        await fetch("/api/rootfiles?produkType=" + type)
+          .then((res) => res.json())
+          .then((res) => {
+            if (res.status === 200) {
+              setData({
+                ...data,
+                userId: user ? user.id : defaultPermohonan.userId,
+                User: user ? user : defaultPermohonan.User,
+                RootFiles: res.data.map((r: RootFiles) => ({
+                  ...r,
+                  Files: [],
+                })),
+              });
+            }
+          });
+      }
       await fetch("/api/jenis-pemohon")
         .then((res) => res.json())
         .then((res) => {
@@ -69,23 +87,7 @@ export default function CreatePermohonan({
             setProduks(res.data);
           }
         });
-      if (!record) {
-        await fetch("/api/rootfiles?produkType=" + type)
-          .then((res) => res.json())
-          .then((res) => {
-            if (res.status === 200) {
-              setData({
-                ...data,
-                userId: user ? user.id : defaultPermohonan.userId,
-                User: user ? user : defaultPermohonan.User,
-                RootFiles: res.data.map((r: RootFiles) => ({
-                  ...r,
-                  Files: [],
-                })),
-              });
-            }
-          });
-      }
+
       setLoading(false);
     })();
   }, [user]);
