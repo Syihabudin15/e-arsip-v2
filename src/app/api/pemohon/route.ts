@@ -21,7 +21,7 @@ export const GET = async (req: NextRequest) => {
           OR: [
             { fullname: { contains: search } },
             { NIK: { contains: search } },
-            { accountNumber: { contains: search } },
+            { noCIF: { contains: search } },
           ],
         }),
       },
@@ -35,7 +35,7 @@ export const GET = async (req: NextRequest) => {
           OR: [
             { fullname: { contains: search } },
             { NIK: { contains: search } },
-            { accountNumber: { contains: search } },
+            { noCIF: { contains: search } },
           ],
         }),
       },
@@ -55,7 +55,7 @@ export const POST = async (req: NextRequest) => {
   const data: Pemohon = await req.json();
   try {
     const find = await prisma.pemohon.findFirst({
-      where: { accountNumber: data.accountNumber },
+      where: { noCIF: data.noCIF },
     });
     if (find) {
       await logActivity(
@@ -79,11 +79,11 @@ export const POST = async (req: NextRequest) => {
       "POST",
       "pemohon",
       JSON.stringify({ status: 201, msg: "Berhasil" }),
-      `Berhasil menambahkan data pemohon ${data.fullname} (${data.NIK}) dengan nomor CIF ${data.accountNumber}`
+      `Berhasil menambahkan data pemohon ${data.fullname} (${data.NIK}) dengan nomor CIF ${data.noCIF}`
     );
     return NextResponse.json(
       {
-        msg: `Berhasil menambahkan data pemohon ${data.fullname} (${data.NIK}) dengan nomor CIF ${data.accountNumber}`,
+        msg: `Berhasil menambahkan data pemohon ${data.fullname} (${data.NIK}) dengan nomor CIF ${data.noCIF}`,
         status: 201,
       },
       { status: 201 }
@@ -109,11 +109,11 @@ export const PUT = async (req: NextRequest) => {
       "PUT",
       "pemohon",
       JSON.stringify({ status: 201, msg: "Berhasil" }),
-      `Berhasil update data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.accountNumber}`
+      `Berhasil update data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.noCIF}`
     );
     return NextResponse.json(
       {
-        msg: `Berhasil update data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.accountNumber}`,
+        msg: `Berhasil update data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.noCIF}`,
         status: 201,
       },
       { status: 201 }
@@ -130,7 +130,7 @@ export const DELETE = async (req: NextRequest) => {
     const { id, ...savedData } = data;
     await prisma.pemohon.update({
       where: { id: id },
-      data: { ...savedData, updatedAt: new Date() },
+      data: { ...savedData, status: false, updatedAt: new Date() },
     });
     await logActivity(
       req,
@@ -138,11 +138,11 @@ export const DELETE = async (req: NextRequest) => {
       "DELETE",
       "pemohon",
       JSON.stringify({ status: 201, msg: "Berhasil" }),
-      `Berhasil delete data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.accountNumber}`
+      `Berhasil delete data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.noCIF}`
     );
     return NextResponse.json(
       {
-        msg: `Berhasil delete data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.accountNumber}`,
+        msg: `Berhasil delete data pemohon ${data.fullname} (${data.NIK}) bernomor CIF ${data.noCIF}`,
         status: 201,
       },
       { status: 201 }

@@ -93,7 +93,7 @@ export default function CreatePermohonan({
   }, [user]);
 
   const handleSubmit = async () => {
-    if (!data.Pemohon.accountNumber || !data.userId)
+    if (!data.Pemohon.noCIF || !data.userId)
       return alert("Mohon lengkapi data terlebih dahulu");
     setLoading(true);
     if ("key" in data) {
@@ -237,7 +237,7 @@ export default function CreatePermohonan({
               });
             }}
             options={pemohons.map((p) => ({
-              label: `${p.fullname} | ${p.NIK} (${p.accountNumber})`,
+              label: `${p.fullname} | ${p.NIK} (${p.noCIF})`,
               value: String(p.id),
             }))}
             align="col"
@@ -273,24 +273,23 @@ export default function CreatePermohonan({
           />
           <FormInput
             label="Nomor CIF"
-            value={data.Pemohon.accountNumber}
+            value={data.Pemohon.noCIF}
             type="number"
             onChange={(e: string) => {
               setData({
                 ...data,
                 Pemohon: {
                   ...data.Pemohon,
-                  accountNumber: String(e),
+                  noCIF: String(e),
                 },
               });
-              const txt = `${record ? "Edit" : "Tambah"} No Rekening (${
-                record ? record.Pemohon.accountNumber : ""
+              const txt = `${record ? "Edit" : "Tambah"} No CIF (${
+                record ? record.Pemohon.noCIF : ""
               } ${record ? "to" : ""} ${e})`;
               setActivity((prev) => {
                 prev = prev
                   ? prev.filter(
-                      (p) =>
-                        !p.includes(`${record ? "Edit" : "Tambah"} No Rekening`)
+                      (p) => !p.includes(`${record ? "Edit" : "Tambah"} No CIF`)
                     )
                   : [];
                 prev.push(txt);
@@ -300,7 +299,6 @@ export default function CreatePermohonan({
             align="col"
             width={"48%"}
             disable={record ? true : disableEdit}
-            // hide={user && user.role.roleName === "MARKETING" ? true : false}
           />
           <div style={{ width: "48%" }}>
             <div className="p-1">
@@ -338,6 +336,33 @@ export default function CreatePermohonan({
               disabled={record ? true : disableEdit}
             />
           </div>
+          <FormInput
+            label="Nomor Rekening"
+            value={data.accountNumber}
+            type="number"
+            onChange={(e: string) => {
+              setData({
+                ...data,
+                accountNumber: String(e),
+              });
+              const txt = `${record ? "Edit" : "Tambah"} No Rekening (${
+                record ? record.accountNumber : ""
+              } ${record ? "to" : ""} ${e})`;
+              setActivity((prev) => {
+                prev = prev
+                  ? prev.filter(
+                      (p) =>
+                        !p.includes(`${record ? "Edit" : "Tambah"} No Rekening`)
+                    )
+                  : [];
+                prev.push(txt);
+                return prev;
+              });
+            }}
+            align="col"
+            width={"48%"}
+          />
+
           <FormInput
             label="Produk"
             value={data.produkId || undefined}
@@ -537,7 +562,7 @@ export default function CreatePermohonan({
               type="primary"
               loading={loading}
               disabled={
-                !data.Pemohon.accountNumber ||
+                !data.Pemohon.noCIF ||
                 !data.Pemohon.jenisPemohonId ||
                 !data.produkId ||
                 !data.userId
@@ -559,7 +584,7 @@ const defaultPermohonan: IPermohonan = {
     fullname: "",
     NIK: "",
     jenisPemohonId: 0,
-    accountNumber: "",
+    noCIF: "",
     status: true,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -577,6 +602,7 @@ const defaultPermohonan: IPermohonan = {
   pemohonId: 0,
   produkId: 0,
   purposeUse: "",
+  accountNumber: "",
   status: true,
   createdAt: new Date(),
   updatedAt: new Date(),

@@ -41,11 +41,11 @@ export default function DashboardMaster() {
       },
     },
     {
-      title: "NAMA LENGKAP",
-      dataIndex: ["Pemohon", "fullname"],
-      key: "fullname",
+      title: "NO CIF",
+      dataIndex: ["Pemohon", "noCIF"],
+      key: "cif",
       className: "text-xs",
-      width: 200,
+      width: 150,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -56,9 +56,9 @@ export default function DashboardMaster() {
       },
     },
     {
-      title: "NO CIF",
-      dataIndex: ["Pemohon", "accountNumber"],
-      key: "cif",
+      title: "NAMA LENGKAP",
+      dataIndex: ["Pemohon", "fullname"],
+      key: "fullname",
       className: "text-xs",
       width: 200,
       onHeaderCell: () => {
@@ -106,6 +106,21 @@ export default function DashboardMaster() {
       key: "produk",
       className: "text-xs",
       width: 150,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center" as React.CSSProperties["textAlign"],
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
+      title: "PRODUK TYPE",
+      dataIndex: ["Produk", "produkType"],
+      key: "produkType",
+      className: "text-xs",
+      width: 100,
       onHeaderCell: () => {
         return {
           ["style"]: {
@@ -373,7 +388,7 @@ export default function DashboardMaster() {
         </Col>
         <Col span={12} xs={24} lg={12}>
           <Card
-            title="Pengajuan Kredit 6 Bulan"
+            title="Permohonan Dalam 6 Bulan"
             styles={{
               header: {
                 background: "linear-gradient(135deg, #3b82f6, #9333ea)",

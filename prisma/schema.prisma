@@ -77,7 +77,7 @@ model Pemohon {
   id             Int          @id @default(autoincrement())
   fullname       String
   NIK            String?
-  accountNumber  String       @unique
+  noCIF          String       @unique @default("")
   JenisPemohon   JenisPemohon @relation(fields: [jenisPemohonId], references: [id])
   jenisPemohonId Int
   Permohonan     Permohonan[]
@@ -100,10 +100,11 @@ model Produk {
 }
 
 model Permohonan {
-  id          Int     @id @default(autoincrement())
-  purposeUse  String?
-  description String? @db.Text
-  activity    String? @db.Text
+  id            Int     @id @default(autoincrement())
+  purposeUse    String?
+  description   String? @db.Text
+  activity      String? @db.Text
+  accountNumber String?
 
   status           Boolean            @default(true)
   createdAt        DateTime           @default(now())
@@ -161,6 +162,7 @@ model PermohonanAction {
   Requester  User       @relation("RequesterRelation", fields: [requesterId], references: [id])
   Approver   User?      @relation("ApproverRelation", fields: [approverId], references: [id])
   Permohonan Permohonan @relation(fields: [permohonanId], references: [id])
+  activities String?    @db.Text
 
   Files Files[] // banyak Files
 

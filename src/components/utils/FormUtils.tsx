@@ -5,6 +5,7 @@ import {
   Input,
   Modal,
   Select,
+  Tooltip,
   Upload,
   UploadProps,
 } from "antd";
@@ -12,6 +13,7 @@ import { IFormInput, IRootFiles, IUser } from "../IInterfaces";
 import {
   CloudUploadOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
@@ -458,12 +460,14 @@ export const HandleFileViewer = ({
   allowDownload,
   hasAccess,
   user,
+  onDownload,
 }: {
   files: string;
   resourceType: string;
   allowDownload: string;
   hasAccess: Function;
   user?: IUser;
+  onDownload?: Function;
 }) => {
   const handleDownload = () => {
     const filter = allowDownload
@@ -476,35 +480,78 @@ export const HandleFileViewer = ({
     if (!allowDownload) return false;
     return false;
   };
+  const downloadFile = async () => {
+    const response = await fetch(files);
+    const blob = await response.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = files.split("/").pop() || "file.pdf";
+    link.click();
 
+    onDownload && onDownload();
+  };
   switch (resourceType) {
     case "application/pdf": {
       return (
         <div className="h-[70vh]">
-          <MyPDFViewer fileUrl={files} download={handleDownload()} />
+          <MyPDFViewer
+            fileUrl={files}
+            download={handleDownload()}
+            onDownload={onDownload}
+          />
         </div>
       );
     }
     case "image/png,image/jpg,image/jpeg": {
       return (
-        <div className=" h-[70vh]">
+        <div className="h-[70vh] relative">
+          {handleDownload() && (
+            <div className="absolute z-10 right-3 top-2">
+              <Tooltip title="Download">
+                <Button
+                  icon={<DownloadOutlined />}
+                  type="primary"
+                  size="small"
+                  onClick={() => downloadFile()}
+                ></Button>
+              </Tooltip>
+            </div>
+          )}
           <Image
             src={files}
             alt={files}
-            className="max-h-full max-w-full object-contain"
+            // className="max-h-full max-w-full object-contain"
+            width={"100%"}
+            height={"100%"}
+            onContextMenu={(e) => e.preventDefault()}
           />
         </div>
       );
     }
     case "video/mp4": {
       return (
-        <div className="flex flex-col justify-center items-center h-[70vh]">
+        <div className="flex flex-col justify-center items-center h-[70vh] relative">
+          {handleDownload() && (
+            <div className="absolute z-10 right-3 top-2">
+              <Tooltip title="Download">
+                <Button
+                  icon={<DownloadOutlined />}
+                  type="primary"
+                  size="small"
+                  onClick={() => downloadFile()}
+                ></Button>
+              </Tooltip>
+            </div>
+          )}
           <video
             src={files}
             controls
             controlsList={handleDownload() ? "" : "nodownload"}
             disablePictureInPicture={!handleDownload()}
             className="max-h-full max-w-full object-contain"
+            onContextMenu={(e) => e.preventDefault()}
+            width={"100%"}
+            height={"100%"}
           />
         </div>
       );

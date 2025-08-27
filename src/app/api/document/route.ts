@@ -22,11 +22,12 @@ export const GET = async (req: NextRequest) => {
   try {
     const find = await prisma.pemohon.findMany({
       where: {
+        status: true,
         ...(search && {
           OR: [
             { fullname: { contains: search } },
             { NIK: { contains: search } },
-            { accountNumber: { contains: search } },
+            { noCIF: { contains: search } },
           ],
         }),
         ...(jenisId !== 0 && { jenisPemohonId: jenisId }),
@@ -48,11 +49,12 @@ export const GET = async (req: NextRequest) => {
     });
     const total = await prisma.pemohon.count({
       where: {
+        status: true,
         ...(search && {
           OR: [
             { fullname: { contains: search } },
             { NIK: { contains: search } },
-            { accountNumber: { contains: search } },
+            { noCIF: { contains: search } },
           ],
         }),
         ...(jenisId !== 0 && { jenisPemohonId: jenisId }),

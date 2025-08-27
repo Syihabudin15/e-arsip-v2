@@ -22,7 +22,7 @@ export async function GET() {
   ] = await Promise.all([
     prisma.user.count({ where: { status: true } }),
     prisma.role.count({ where: { status: true } }),
-    prisma.files.count(),
+    prisma.files.count({ where: { permohonanId: { not: null } } }),
     prisma.permohonan.count({
       where: { status: true, createdAt: { gte: today } },
     }),

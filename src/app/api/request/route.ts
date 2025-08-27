@@ -7,7 +7,7 @@ import {
 import prisma from "@/components/Prisma";
 import { logActivity } from "@/components/utils/Auth";
 import { ENeedAction, Files, StatusAction } from "@prisma/client";
-import moment from "moment";
+import moment from "moment-timezone";
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
@@ -27,7 +27,7 @@ export const POST = async (req: NextRequest) => {
         ? (JSON.parse(find.activity) as EditActivity[])
         : [];
       temp.push({
-        time: moment().format("DD/MM/YYYY HH:mm"),
+        time: moment().tz("Asia/Jakarta").format("DD/MM/YYYY HH:mm"),
         desc: `User id [${data.requesterId}] Memohon ${
           data.action
         } Files: ${data.Files.map((d: Files) => d.name).join(",")}`,
@@ -52,15 +52,6 @@ export const POST = async (req: NextRequest) => {
     );
   } catch (err) {
     console.log(err);
-    await logActivity(
-      req,
-      `Permohonan ${data.action} File Gagal`,
-      "POST",
-      "permohonanAction",
-      JSON.stringify({ status: 500, msg: "Server Error" }),
-      `Gagal mengajukan permohonan ${data.action} file ` +
-        data.Files.map((d: any) => d.name).join(",")
-    );
     return NextResponse.json(
       { msg: "Server Error", status: 500 },
       { status: 500 }
@@ -71,6 +62,9 @@ export const POST = async (req: NextRequest) => {
 export const GET = async (req: NextRequest) => {
   const search: string | undefined = <any>(
     req.nextUrl.searchParams.get("search")
+  );
+  const isActive: string | undefined = <any>(
+    req.nextUrl.searchParams.get("isActive")
   );
   const status: StatusAction | undefined = <any>(
     req.nextUrl.searchParams.get("status")
@@ -88,17 +82,23 @@ export const GET = async (req: NextRequest) => {
       where: {
         ...(search && {
           Permohonan: {
-            Pemohon: {
-              OR: [
-                { fullname: { contains: search } },
-                { NIK: { contains: search } },
-                { accountNumber: { contains: search } },
-              ],
-            },
+            OR: [
+              {
+                Pemohon: {
+                  OR: [
+                    { fullname: { contains: search } },
+                    { NIK: { contains: search } },
+                    { noCIF: { contains: search } },
+                  ],
+                },
+              },
+              { accountNumber: { contains: search } },
+            ],
           },
         }),
         ...(status && { statusAction: status }),
         ...(action && { action: action }),
+        ...(isActive && { status: isActive === "1" ? true : false }),
       },
       include: {
         Files: {
@@ -129,17 +129,23 @@ export const GET = async (req: NextRequest) => {
       where: {
         ...(search && {
           Permohonan: {
-            Pemohon: {
-              OR: [
-                { fullname: { contains: search } },
-                { NIK: { contains: search } },
-                { accountNumber: { contains: search } },
-              ],
-            },
+            OR: [
+              {
+                Pemohon: {
+                  OR: [
+                    { fullname: { contains: search } },
+                    { NIK: { contains: search } },
+                    { noCIF: { contains: search } },
+                  ],
+                },
+              },
+              { accountNumber: { contains: search } },
+            ],
           },
         }),
         ...(status && { statusAction: status }),
         ...(action && { action: action }),
+        ...(isActive && { status: isActive === "1" ? true : false }),
       },
     });
 
@@ -184,7 +190,7 @@ export const PUT = async (req: NextRequest) => {
         ? (JSON.parse(find.activity) as EditActivity[])
         : [];
       temp.push({
-        time: moment().format("DD/MM/YYYY HH:mm"),
+        time: moment().tz("Asia/Jakarta").format("DD/MM/YYYY HH:mm"),
         desc: `[${data.approverId}] Melakukan proses (${data.statusAction}) ${
           data.action
         } Files : ${RootFiles.flatMap((r) => r.Files)
@@ -205,6 +211,7 @@ export const PUT = async (req: NextRequest) => {
           statusAction: data.statusAction,
           description: data.description,
           approverId: data.approverId,
+          activities: data.activities,
         },
       });
       if (data.action === ENeedAction.DOWNLOAD) {

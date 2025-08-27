@@ -123,8 +123,8 @@ export default function TablePermohonanKredit({ type }: { type: EProdukType }) {
     },
     {
       title: "NO CIF",
-      dataIndex: ["Pemohon", "accountNumber"],
-      key: "accountNumber",
+      dataIndex: ["Pemohon", "noCIF"],
+      key: "noCif",
       width: 100,
       className: "text-xs text-center",
       onHeaderCell: () => {
@@ -157,6 +157,21 @@ export default function TablePermohonanKredit({ type }: { type: EProdukType }) {
       title: "NOMOR NIK",
       dataIndex: ["Pemohon", "NIK"],
       key: "nik",
+      className: "text-xs",
+      width: 200,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
+      title: "NO REKENING",
+      dataIndex: "accountNumber",
+      key: "accountNumber",
       className: "text-xs",
       width: 200,
       onHeaderCell: () => {
@@ -380,6 +395,7 @@ export default function TablePermohonanKredit({ type }: { type: EProdukType }) {
                     data={record}
                     getData={getData}
                     user={user}
+                    type={type}
                   />
                 )}
               </>
@@ -457,10 +473,12 @@ export const DeletePermohonan = ({
   data,
   getData,
   user,
+  type,
 }: {
   data: IPermohonan;
   getData: Function;
   user: IUser;
+  type: EProdukType;
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -474,7 +492,7 @@ export const DeletePermohonan = ({
     await fetch("/api/permohonan", {
       method: "DELETE",
       body: JSON.stringify({
-        id: data.id,
+        ...data,
         status: false,
         updatedAt: new Date(),
       }),
@@ -484,15 +502,17 @@ export const DeletePermohonan = ({
         if (res.status === 201 || res.status === 200) {
           modal.success({
             title: "BERHASIL",
-            content: `Data ${data && data.Pemohon.fullname} berhasil dihapus`,
+            content: `Data Permohonan ${type} ${
+              data && data.Pemohon.fullname
+            } berhasil dihapus`,
           });
           setOpen(false);
           getData();
           await fetch("/api/sendEmail", {
             method: "POST",
             body: JSON.stringify({
-              subject: `Permohonan ${data.Pemohon.fullname} Dihapus`,
-              description: `${user?.fullname} Berhasil menghapus data Permohonan  ${data.Pemohon.fullname}`,
+              subject: `Permohonan ${type} ${data.Pemohon.fullname} Dihapus`,
+              description: `${user?.fullname} Berhasil menghapus data Permohonan  ${type} ${data.Pemohon.fullname}`,
             }),
           });
           return;
@@ -517,7 +537,7 @@ export const DeletePermohonan = ({
         loading={loading}
       ></Button>
       <Modal
-        title={`HAPUS PERMOHONAN ${data.Pemohon.fullname.toUpperCase()}`}
+        title={`HAPUS PERMOHONAN ${type} ${data.Pemohon.fullname.toUpperCase()}`}
         open={open}
         onCancel={() => setOpen(false)}
         onOk={() => handleSubmit()}
@@ -525,7 +545,7 @@ export const DeletePermohonan = ({
         okButtonProps={{ loading: loading }}
       >
         <div className="my-4">
-          <p>Apakah anda yakin ingin menghapus Permohonan Kredit ini?</p>
+          <p>Apakah anda yakin ingin menghapus Permohonan {type} ini?</p>
         </div>
       </Modal>
     </div>
@@ -602,6 +622,16 @@ const DataPemohon = ({ data }: { data: IPermohonan }) => {
         </div>
       </div>
       <div className="flex flex-row items-center justify-between gap-2">
+        <div>NO CIF</div>
+        <div>
+          <Input
+            disabled
+            value={data.Pemohon.noCIF || ""}
+            style={{ color: "GrayText" }}
+          />
+        </div>
+      </div>
+      <div className="flex flex-row items-center justify-between gap-2">
         <div>Nama Permohonan</div>
         <div>
           <Input
@@ -622,11 +652,11 @@ const DataPemohon = ({ data }: { data: IPermohonan }) => {
         </div>
       </div>
       <div className="flex flex-row items-center justify-between gap-2">
-        <div>NO CIF</div>
+        <div>No Rekening</div>
         <div>
           <Input
             disabled
-            value={data.Pemohon.accountNumber || ""}
+            value={data.accountNumber || ""}
             style={{ color: "GrayText" }}
           />
         </div>
@@ -754,24 +784,9 @@ const BerkasBerkas = ({
                   resourceType={f.RootFiles.resourceType}
                   hasAccess={hasAccess}
                   user={user}
-                  allowDownload={f.allowDownload}
+                  allowDownload={""}
+                  // onDownload={() => console.log("Has Downloaded")}
                 />
-                // <div className="h-[70vh]">
-                //   <MyPDFViewer
-                //     fileUrl={f.url}
-                //     download={(() => {
-                //       const filter = f.allowDownload
-                //         .split(",")
-                //         .map(Number)
-                //         .includes(user?.id || 0);
-                //       if (hasAccess("download") || filter) {
-                //         return true;
-                //       }
-                //       if (!f.allowDownload) return false;
-                //       return false;
-                //     })()}
-                //   />
-                // </div>
               ),
             }))),
         ]}

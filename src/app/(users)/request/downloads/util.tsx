@@ -2,14 +2,16 @@
 
 import { useUser } from "@/components/contexts/UserContext";
 import {
+  EditActivity,
+  FilesPA,
   IDescription,
   IFiles,
   IPermohonan,
   IPermohonanAction,
   IUser,
 } from "@/components/IInterfaces";
-import { FormInput } from "@/components/utils/FormUtils";
-import { HandleFileViewer, MyPDFViewer } from "@/components/utils/LayoutUtil";
+import { FilterOption, FormInput } from "@/components/utils/FormUtils";
+import { HandleFileViewer } from "@/components/utils/LayoutUtil";
 import { useAccess } from "@/components/utils/PermissionUtil";
 import {
   FolderOutlined,
@@ -36,6 +38,7 @@ export default function TableDownload() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState<string>();
+  const [status, setStatus] = useState<string>("1");
   const [data, setData] = useState<IPermohonanAction[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -48,7 +51,7 @@ export default function TableDownload() {
     await fetch(
       `/api/request?page=${page}&pageSize=${pageSize}&action=DOWNLOAD${
         search ? "&search=" + search : ""
-      }`
+      }&isActive=${status ? status : "1"}`
     )
       .then((res) => res.json())
       .then((res) => {
@@ -76,7 +79,7 @@ export default function TableDownload() {
       await getData();
     }, 200);
     return () => clearTimeout(timeout);
-  }, [search, page, pageSize]);
+  }, [search, page, pageSize, status]);
 
   const columns: TableProps<IPermohonanAction>["columns"] = [
     {
@@ -267,6 +270,46 @@ export default function TableDownload() {
       },
     },
     {
+      title: "ACTIVITIES",
+      dataIndex: "activities",
+      key: "activities",
+      className: "text-xs",
+      width: 300,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+      render(value, record, index) {
+        const activities: EditActivity[] | null = record.activities
+          ? JSON.parse(record.activities)
+          : null;
+        return (
+          <Paragraph
+            ellipsis={{
+              rows: 1,
+              expandable: "collapsible",
+            }}
+            style={{ fontSize: 11 }}
+          >
+            {activities &&
+              activities.map((d) => (
+                <>
+                  {"{"}
+                  {d.time} : {d.desc}
+                  {"}"}
+                  <br />
+                  <br />
+                </>
+              ))}
+          </Paragraph>
+        );
+      },
+    },
+    {
       title: "CREATED AT",
       dataIndex: "createdAt",
       key: "createdAt",
@@ -351,6 +394,18 @@ export default function TableDownload() {
                   setDataKredits={setDataKredit}
                 />
               )}
+              <FilterOption
+                items={[
+                  { label: "AKTIF", value: "1" },
+                  {
+                    label: "SELESAI",
+                    value: "0",
+                  },
+                ]}
+                value={status}
+                onChange={(e: any) => setStatus(e)}
+                width={150}
+              />
             </div>
             <div className="w-42">
               <Input.Search
@@ -414,6 +469,14 @@ export const ProsesDownloadFile = ({
     }
     data.statusAction = status || StatusAction.PENDING;
     data.approverId = user?.id || null;
+    const tempAct: EditActivity[] = JSON.parse(data.activities || "[]");
+    tempAct.push({
+      time: moment().format("DD/MM/YYYY HH:mm"),
+      desc: `${user?.fullname}: Memproses permohonan download file ${
+        data.Requester.fullname
+      } dengan status ${status || "PENDING"}`,
+    });
+    data.activities = JSON.stringify(tempAct);
 
     await fetch("/api/request", {
       method: "PUT",
@@ -460,23 +523,52 @@ export const ProsesDownloadFile = ({
       });
     setLoading(false);
   };
-  const tabItems = data.RootFiles.flatMap((rf) =>
-    rf.Files.map((f) => ({
-      label: f.name,
-      key: `${rf.id}-${f.id}`,
-    }))
-  );
 
-  console.log(
-    "Generated keys:",
-    tabItems.map((i) => i.key)
-  );
+  const checkDownloadAccess = () => {
+    const filter = data.RootFiles.flatMap((rf) => rf.Files)
+      .map((f) => f.allowDownload)
+      .join("")
+      .split(",")
+      .map(Number)
+      .includes(user?.id || 0);
+    if (hasAccess("download") || filter) {
+      return true;
+    }
+    return false;
+  };
+
+  const handleHasDownload = async (currFile: FilesPA) => {
+    if (!currFile) return;
+    const tempAct: EditActivity[] = JSON.parse(data.activities || "[]");
+    tempAct.push({
+      time: moment().format("DD/MM/YYYY HH:mm"),
+      desc: `${user?.fullname}: berhasil mendownload file ${currFile.name}`,
+    });
+    const resultAct = JSON.stringify(tempAct);
+
+    await fetch("/api/files", {
+      method: "PUT",
+      body: JSON.stringify({
+        actionId: data.id,
+        activities: resultAct,
+        File: currFile,
+      }),
+    })
+      .then((res) => res.json())
+      .then(async () => {
+        setOpen(false);
+        getData();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   return (
     <div>
       <Button
         size="small"
         type="primary"
-        // disabled={data.statusAction === StatusAction.APPROVED}
         icon={
           data.statusAction === StatusAction.APPROVED ? (
             <FolderOutlined />
@@ -485,6 +577,11 @@ export const ProsesDownloadFile = ({
           )
         }
         onClick={() => setOpen(true)}
+        disabled={
+          data.statusAction === StatusAction.APPROVED &&
+          !data.status &&
+          !checkDownloadAccess()
+        }
       ></Button>
       <Modal
         title={"PROSES PERMOHONAN"}
@@ -510,6 +607,7 @@ export const ProsesDownloadFile = ({
                     allowDownload={f.allowDownload}
                     hasAccess={hasAccess}
                     user={user || undefined}
+                    onDownload={() => handleHasDownload(f)}
                   />
                 ),
               }))}
@@ -631,13 +729,15 @@ const CreateDownloadFile = ({
     setLoading(true);
     const newData = {
       statusAction: StatusAction.PENDING,
-      description: JSON.stringify([
-        {
-          user: user?.fullname,
-          time: moment().format("DD/MM/YYYY HH:mm"),
-          desc,
-        },
-      ]),
+      ...(desc && {
+        description: JSON.stringify([
+          {
+            user: user?.fullname,
+            time: moment().format("DD/MM/YYYY HH:mm"),
+            desc,
+          },
+        ]),
+      }),
       action: ENeedAction.DOWNLOAD,
 
       status: true,
@@ -647,6 +747,14 @@ const CreateDownloadFile = ({
       approverId: null,
       permohonanId: selected ? selected.id : 0,
       Files: filesSelected,
+      activities: JSON.stringify([
+        {
+          time: moment().format("DD/MM/YYYY HH:mm"),
+          desc: `${user?.fullname}: Memohon download files ${filesSelected
+            .map((f) => f.name)
+            .join(",")}`,
+        },
+      ]),
     };
     await fetch("/api/request", {
       method: "POST",

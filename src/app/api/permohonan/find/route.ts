@@ -41,7 +41,7 @@ export const GET = async (req: NextRequest) => {
           rootFilesId: root.id,
           permohonanId: data.id,
         },
-        include: { PermohonanAction: true },
+        include: { PermohonanAction: true, RootFiles: true },
       });
       newData.RootFiles.push({ ...root, Files: files });
     }

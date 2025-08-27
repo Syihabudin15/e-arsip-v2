@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { IFiles, IPermohonan, IRootFiles } from "@/components/IInterfaces";
+import {
+  IFiles,
+  IPermohonan,
+  IRootFiles,
+  IUser,
+} from "@/components/IInterfaces";
 import { FileOutlined, LoadingOutlined } from "@ant-design/icons";
 import { App, Button, Checkbox, Modal, Spin } from "antd";
 import { FormInput } from "@/components/utils/FormUtils";
-import dynamic from "next/dynamic";
 import { ENeedAction, StatusAction } from "@prisma/client";
 import { useUser } from "@/components/contexts/UserContext";
 import moment from "moment";
-const MyPDFViewer = dynamic(() =>
-  import("@/components/utils/LayoutUtil").then((d) => d.MyPDFViewer)
-);
+import { HandleFileViewer } from "@/components/utils/LayoutUtil";
+import { useAccess } from "@/components/utils/PermissionUtil";
+import { usePathname } from "next/navigation";
 
 export default function DeleteFiles({ id }: { id: number }) {
   const [loading, setLoading] = useState(false);
@@ -21,6 +25,8 @@ export default function DeleteFiles({ id }: { id: number }) {
   const [tempData, setTempData] = useState<IRootFiles[]>([]);
   const { modal } = App.useApp();
   const user = useUser();
+  const pathname = usePathname();
+  const { hasAccess } = useAccess(pathname);
 
   useEffect(() => {
     setLoading(true);
@@ -53,6 +59,15 @@ export default function DeleteFiles({ id }: { id: number }) {
       Files: files,
       requesterId: user?.id || 0,
       permohonanId: Number(id),
+      activities: JSON.stringify([
+        {
+          time: moment().format("DD/MM/YYYY HH:mm"),
+          desc: `${user?.fullname}: memohon pennghapusan file ${tempData
+            .flatMap((r) => r.Files)
+            .map((f) => f.name)
+            .join(",")}`,
+        },
+      ]),
     };
 
     await fetch("/api/request", {
@@ -62,6 +77,7 @@ export default function DeleteFiles({ id }: { id: number }) {
       .then((res) => res.json())
       .then(async (res) => {
         if (res.status === 201) {
+          setOpen(false);
           modal.success({
             title: "BERHASIL",
             content: "Permohonan hapus file berhasil dikirimkan",
@@ -84,6 +100,7 @@ export default function DeleteFiles({ id }: { id: number }) {
                 )}`,
             }),
           });
+          window && window.location.reload();
         } else {
           modal.error({ title: "ERROR", content: "Internal Server Error" });
         }
@@ -113,7 +130,13 @@ export default function DeleteFiles({ id }: { id: number }) {
         </div>
         <div className="flex flex-wrap gap-4 justify-between">
           {data.RootFiles.map((d) => (
-            <Items data={d} key={d.id} setSelected={setTempData} />
+            <Items
+              data={d}
+              key={d.id}
+              setSelected={setTempData}
+              hasAccess={hasAccess}
+              user={user}
+            />
           ))}
         </div>
         <div className="flex justify-end p-2">
@@ -161,9 +184,13 @@ export default function DeleteFiles({ id }: { id: number }) {
 const Items = ({
   data,
   setSelected,
+  hasAccess,
+  user,
 }: {
   data: IRootFiles;
   setSelected: Function;
+  hasAccess: Function;
+  user?: IUser;
 }) => {
   const [tempData, setTempData] = useState<IRootFiles>({ ...data, Files: [] });
   const [selectedFile, setSelectedFile] = useState<IFiles>();
@@ -233,7 +260,17 @@ const Items = ({
             title={"BERKAS " + selectedFile ? selectedFile?.name : ""}
           >
             <div className="h-[80vh]">
-              <MyPDFViewer fileUrl={selectedFile ? selectedFile.url : ""} />
+              <HandleFileViewer
+                files={selectedFile?.url || ""}
+                resourceType={
+                  selectedFile
+                    ? selectedFile.RootFiles.resourceType
+                    : "application/pdf"
+                }
+                hasAccess={hasAccess}
+                user={user}
+                allowDownload={""}
+              />
             </div>
           </Modal>
         </div>

@@ -56,7 +56,7 @@ export interface IPermohonan extends Permohonan {
   User: User;
   Pemohon: IPemohonForPermohonan;
 }
-interface FilesPA extends Files {
+export interface FilesPA extends Files {
   Permohonan: Permohonan;
   RootFiles?: RootFiles;
 }

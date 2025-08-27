@@ -28,13 +28,18 @@ export const GET = async (req: NextRequest) => {
       where: {
         status: true,
         ...(search && {
-          Pemohon: {
-            OR: [
-              { fullname: { contains: search } },
-              { NIK: { contains: search } },
-              { accountNumber: { contains: search } },
-            ],
-          },
+          OR: [
+            {
+              Pemohon: {
+                OR: [
+                  { fullname: { contains: search } },
+                  { NIK: { contains: search } },
+                  { noCIF: { contains: search } },
+                ],
+              },
+            },
+            { accountNumber: { contains: search } },
+          ],
         }),
         ...(id !== 0 && { id }),
         ...(jenisId !== 0 && { Pemohon: { jenisPemohonId: jenisId } }),
@@ -60,17 +65,23 @@ export const GET = async (req: NextRequest) => {
       where: {
         status: true,
         ...(search && {
-          Pemohon: {
-            OR: [
-              { fullname: { contains: search } },
-              { NIK: { contains: search } },
-              { accountNumber: { contains: search } },
-            ],
-          },
+          OR: [
+            {
+              Pemohon: {
+                OR: [
+                  { fullname: { contains: search } },
+                  { NIK: { contains: search } },
+                  { noCIF: { contains: search } },
+                ],
+              },
+            },
+            { accountNumber: { contains: search } },
+          ],
         }),
+        ...(id !== 0 && { id }),
         ...(jenisId !== 0 && { Pemohon: { jenisPemohonId: jenisId } }),
+        ...(produkId !== 0 && { produkId: produkId }),
         ...(produkType && { Produk: { produkType: produkType } }),
-        ...(produkId && { produkId: produkId }),
       },
     });
 
@@ -113,7 +124,7 @@ export const POST = async (req: NextRequest) => {
   try {
     const { id, Pemohon, User, RootFiles, Produk, ...permohonan } = data;
     const findPemohon = await prisma.pemohon.findFirst({
-      where: { accountNumber: Pemohon.accountNumber },
+      where: { noCIF: Pemohon.noCIF },
     });
     if (findPemohon && findPemohon.NIK !== Pemohon.NIK) {
       return NextResponse.json(
@@ -141,11 +152,14 @@ export const POST = async (req: NextRequest) => {
     });
     await logActivity(
       req,
-      "Tambah Permohonan Kredit",
+      "Tambah Permohonan " + data.Produk.produkType,
       "POST",
-      "permohonanKredit",
+      "permohonan",
       JSON.stringify({ status: 201, msg: "OK" }),
-      "Berhasil Menambahkan Permohonan Kredit " + data.Pemohon.fullname
+      "Berhasil Menambahkan Permohonan " +
+        data.Produk.produkType +
+        " " +
+        data.Pemohon.fullname
     );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
@@ -166,7 +180,7 @@ export const PUT = async (req: NextRequest) => {
       ...RootFiles.map((rf) =>
         prisma.files.createMany({
           data: rf.Files.map((f: any) => {
-            const { PermohonanAction, ...newF } = f;
+            const { PermohonanAction, RootFiles, ...newF } = f;
             return { ...newF, permohonanId: id };
           }),
         })
@@ -174,13 +188,15 @@ export const PUT = async (req: NextRequest) => {
     ]);
     await logActivity(
       req,
-      `${data.status ? "Update" : "Hapus"}  Permohonan Kredit`,
+      `${data.status ? "Update" : "Hapus"}  Permohonan ${
+        data.Produk.produkType
+      }`,
       data.status ? "PUT" : "DELETE",
-      "permohonanKredit",
+      "permohonan",
       JSON.stringify({ status: 201, msg: "OK" }),
-      `Berhasil ${data.status ? "Update" : "Hapus"} Permohonan Kredit ${
-        data.Pemohon.fullname
-      }`
+      `Berhasil ${data.status ? "Update" : "Hapus"} Permohonan ${
+        data.Produk.produkType
+      } ${data.Pemohon.fullname}`
     );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
@@ -196,6 +212,14 @@ export const DELETE = async (req: NextRequest) => {
       where: { id: data.id },
       data,
     });
+    await logActivity(
+      req,
+      `Hapus  Permohonan ${data.Produk.produkType}`,
+      "DELETE",
+      "permohonan",
+      JSON.stringify({ status: 201, msg: "OK" }),
+      `Berhasil Hapus Permohonan ${data.Produk.produkType} ${data.Pemohon.fullname}`
+    );
     return NextResponse.json({ msg: "OK", status: 201 }, { status: 201 });
   } catch (err) {
     console.log(err);

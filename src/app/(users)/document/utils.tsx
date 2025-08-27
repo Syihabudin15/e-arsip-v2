@@ -28,7 +28,6 @@ export default function TableDokumen() {
   const [jeniss, setJeniss] = useState<JenisPemohon[]>([]);
   const { hasAccess } = useAccess("/document");
   const { modal } = App.useApp();
-  const user = useUser();
 
   const getData = async () => {
     setLoading(true);
@@ -87,8 +86,8 @@ export default function TableDokumen() {
     },
     {
       title: "NOMOR CIF",
-      dataIndex: "accountNumber",
-      key: "account",
+      dataIndex: "noCIF",
+      key: "noCIF",
       className: "text-xs",
       width: 200,
       onHeaderCell: () => {
@@ -296,6 +295,21 @@ const TablePermohonan = ({
       },
     },
     {
+      title: "NO REKENING",
+      dataIndex: "accountNumber",
+      key: "accountNumber",
+      className: "text-xs",
+      width: 150,
+      onHeaderCell: () => {
+        return {
+          ["style"]: {
+            textAlign: "center",
+            fontSize: 12,
+          },
+        };
+      },
+    },
+    {
       title: "NAMA PRODUK",
       dataIndex: ["Produk", "name"],
       key: "produkName",
@@ -422,7 +436,7 @@ const UpsertPemohon = ({
         id: data.id,
         fullname: data.fullname,
         NIK: data.NIK,
-        accountNumber: data.accountNumber,
+        noCIF: data.noCIF,
         jenisPemohonId: data.jenisPemohonId,
       }),
     })
@@ -476,20 +490,15 @@ const UpsertPemohon = ({
         loading={loading}
         okButtonProps={{
           disabled:
-            !data.accountNumber ||
-            !data.NIK ||
-            !data.fullname ||
-            !data.jenisPemohonId,
+            !data.NIK || !data.fullname || !data.jenisPemohonId || !data.noCIF,
         }}
       >
         <div className="my-4 flex flex-col gap-1">
           <FormInput
             label="NO CIF"
-            value={data.accountNumber}
+            value={data.noCIF}
             type="number"
-            onChange={(e: any) =>
-              setData({ ...data, accountNumber: String(e) })
-            }
+            onChange={(e: any) => setData({ ...data, noCIF: String(e) })}
             required
           />
           <FormInput
@@ -545,7 +554,10 @@ const DeletePemohon = ({
       .then((res) => res.json())
       .then(async (res) => {
         if (res.status === 201) {
-          hook.success({ title: "BERHASIL", content: res.msg });
+          hook.success({
+            title: "BERHASIL",
+            content: `Berhasil hapus data pemohon ${record.fullname} (${record.NIK}) Bernomor CIF ${record.noCIF}`,
+          });
           setOpen(false);
           await getData();
           await fetch("/api/sendEmail", {
@@ -592,7 +604,7 @@ const DeletePemohon = ({
         <div className="my-4 flex flex-col gap-1">
           <FormInput
             label="NO CIF"
-            value={record.accountNumber}
+            value={record.noCIF}
             type="number"
             required
             disable
@@ -633,7 +645,7 @@ const defaultPemohon: Pemohon = {
   id: 0,
   fullname: "",
   NIK: "",
-  accountNumber: "",
+  noCIF: "",
   status: true,
   createdAt: new Date(),
   updatedAt: new Date(),

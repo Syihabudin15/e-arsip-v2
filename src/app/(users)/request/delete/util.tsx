@@ -1,7 +1,11 @@
 "use client";
 
 import { useUser } from "@/components/contexts/UserContext";
-import { IDescription, IPermohonanAction } from "@/components/IInterfaces";
+import {
+  EditActivity,
+  IDescription,
+  IPermohonanAction,
+} from "@/components/IInterfaces";
 import { FormInput } from "@/components/utils/FormUtils";
 import { HandleFileViewer, MyPDFViewer } from "@/components/utils/LayoutUtil";
 import { useAccess } from "@/components/utils/PermissionUtil";
@@ -384,6 +388,14 @@ const ProsesDeleteFile = ({
     }
     data.statusAction = status || StatusAction.PENDING;
     data.approverId = user?.id || null;
+    const tempAct: EditActivity[] = JSON.parse(data.activities || "[]");
+    tempAct.push({
+      time: moment().format("DD/MM/YYYY HH:mm"),
+      desc: `${user?.fullname}: Memproses permohonan hapus file dengan status ${
+        status || "PENDING"
+      }`,
+    });
+    data.activities = JSON.stringify(tempAct);
 
     await fetch("/api/request", {
       method: "PUT",
@@ -396,7 +408,17 @@ const ProsesDeleteFile = ({
         } else {
           modal.success({
             title: "BERHASIL",
-            content: "File berhasil dihapus",
+            content: `${
+              data.statusAction === "PENDING"
+                ? `Penghapusan file dipending ${
+                    desc ? "karena alasan " + desc : ""
+                  }`
+                : data.statusAction === "APPROVED"
+                ? "File berhasil dihapus"
+                : `Penghapusan file tidak disetujui ${
+                    desc ? "karena alasan " + desc : ""
+                  }`
+            }`,
           });
           setOpen(false);
           getData();
