@@ -492,7 +492,9 @@ export const DeletePermohonan = ({
     await fetch("/api/permohonan", {
       method: "DELETE",
       body: JSON.stringify({
-        ...data,
+        id: data.id,
+        Produk: data.Produk,
+        Pemohon: data.Pemohon,
         status: false,
         updatedAt: new Date(),
       }),
