@@ -210,7 +210,7 @@ export const DELETE = async (req: NextRequest) => {
   try {
     await prisma.permohonan.update({
       where: { id: data.id },
-      data,
+      data: { status: data.status, updatedAt: data.updatedAt },
     });
     await logActivity(
       req,
