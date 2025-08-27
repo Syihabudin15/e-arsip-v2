@@ -34,6 +34,7 @@ export const GET = async (req: NextRequest) => {
       },
       include: {
         Permohonan: {
+          where: { status: true },
           include: {
             Produk: true,
             Pemohon: { include: { JenisPemohon: true } },
